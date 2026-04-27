@@ -2,8 +2,7 @@ package main
 
 import (
 	"backend/config"
-	"backend/internal/middleware"
-	"backend/internal/routes"
+	"backend/internal/modules/auth"
 	"log"
 	"os"
 
@@ -24,13 +23,13 @@ func main() {
 		})
 	})
 
-	app.Get("/api/me", middleware.Protected(), func(c fiber.Ctx) error {
+	app.Get("/api/me", auth.Protected(), func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"user_id": c.Locals("user_id"),
 		})
 	})
 
-	routes.AuthRoutes(app)
+	auth.RegisterRoutes(app)
 
 	port := os.Getenv("PORT")
 

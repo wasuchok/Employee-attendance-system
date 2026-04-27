@@ -1,4 +1,4 @@
-package middleware
+package auth
 
 import (
 	"os"
@@ -10,7 +10,6 @@ import (
 
 func Protected() fiber.Handler {
 	return func(c fiber.Ctx) error {
-
 		authHeader := c.Get("Authorization")
 
 		if authHeader == "" {

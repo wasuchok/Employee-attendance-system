@@ -1,8 +1,7 @@
-package handlers
+package auth
 
 import (
 	"backend/config"
-	"backend/internal/utils"
 	"context"
 	"strings"
 	"time"
@@ -47,7 +46,7 @@ func Register(c fiber.Ctx) error {
 		})
 	}
 
-	passwordHash, err := utils.HashPassword(body.Password)
+	passwordHash, err := HashPassword(body.Password)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Could not hash password",
@@ -123,27 +122,27 @@ func Login(c fiber.Ctx) error {
 		})
 	}
 
-	if !utils.CheckPasswordHash(body.Password, passwordHash) {
+	if !CheckPasswordHash(body.Password, passwordHash) {
 		return c.Status(401).JSON(fiber.Map{
 			"message": "Invalid email or password",
 		})
 	}
 
-	accessToken, err := utils.GenerateAccessToken(userID, email, role)
+	accessToken, err := GenerateAccessToken(userID, email, role)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Could not generate access token",
 		})
 	}
 
-	refreshToken, refreshExpiresAt, err := utils.GenerateRefreshToken(userID, email, role)
+	refreshToken, refreshExpiresAt, err := GenerateRefreshToken(userID, email, role)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Could not generate refresh token",
 		})
 	}
 
-	refreshTokenHash := utils.HashToken(refreshToken)
+	refreshTokenHash := HashToken(refreshToken)
 
 	_, err = config.DB.Exec(
 		context.Background(),
@@ -188,7 +187,7 @@ func RefreshToken(c fiber.Ctx) error {
 		})
 	}
 
-	tokenHash := utils.HashToken(body.RefreshToken)
+	tokenHash := HashToken(body.RefreshToken)
 
 	var userID int64
 	var email string
@@ -230,10 +229,10 @@ func RefreshToken(c fiber.Ctx) error {
 		tokenHash,
 	)
 
-	newAccessToken, _ := utils.GenerateAccessToken(userID, email, role)
-	newRefreshToken, newExpiresAt, _ := utils.GenerateRefreshToken(userID, email, role)
+	newAccessToken, _ := GenerateAccessToken(userID, email, role)
+	newRefreshToken, newExpiresAt, _ := GenerateRefreshToken(userID, email, role)
 
-	newHash := utils.HashToken(newRefreshToken)
+	newHash := HashToken(newRefreshToken)
 
 	_, _ = config.DB.Exec(context.Background(),
 		`INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
@@ -257,7 +256,7 @@ func Logout(c fiber.Ctx) error {
 		})
 	}
 
-	hash := utils.HashToken(body.RefreshToken)
+	hash := HashToken(body.RefreshToken)
 
 	_, err := config.DB.Exec(
 		context.Background(),
