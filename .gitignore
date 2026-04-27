@@ -1,0 +1,39 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Go build output
+bin/
+dist/
+build/
+*.exe
+*.out
+*.test
+coverage.out
+coverage.html
+
+# Go workspace/vendor caches
+vendor/
+go.work
+go.work.sum
+
+# Local databases and generated data
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/
