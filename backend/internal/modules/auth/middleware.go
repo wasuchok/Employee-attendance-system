@@ -20,7 +20,9 @@ func Protected() fiber.Handler {
 
 		tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
 
-		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		claims := &Claims{}
+
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 			return []byte(os.Getenv("JWT_ACCESS_SECRET")), nil
 		})
 
@@ -30,9 +32,7 @@ func Protected() fiber.Handler {
 			})
 		}
 
-		claims := token.Claims.(jwt.MapClaims)
-
-		c.Locals("user_id", claims["user_id"])
+		c.Locals("user_id", claims.UserID)
 
 		return c.Next()
 	}

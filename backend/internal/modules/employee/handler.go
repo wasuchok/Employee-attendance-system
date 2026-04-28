@@ -19,6 +19,19 @@ type CreateMyEmployeeProfileRequest struct {
 	AvatarURL    string `json:"avatar_url"`
 }
 
+type EmployeeProfileResponse struct {
+	ID           int64   `json:"id"`
+	UserID       int64   `json:"user_id"`
+	Email        string  `json:"email"`
+	EmployeeCode string  `json:"employee_code"`
+	FullName     string  `json:"full_name"`
+	Position     string  `json:"position"`
+	Phone        *string `json:"phone"`
+	AvatarURL    *string `json:"avatar_url"`
+	DepartmentID *int64  `json:"department_id"`
+	Department   *string `json:"department"`
+}
+
 func CreateMyEmployeeProfile(c fiber.Ctx) error {
 	var body CreateMyEmployeeProfileRequest
 
@@ -104,4 +117,67 @@ func CreateMyEmployeeProfile(c fiber.Ctx) error {
 			"avatar_url":    body.AvatarURL,
 		},
 	})
+}
+
+// userID, ok := c.Locals("user_id").(int64)
+// 	if !ok {
+// 		return c.Status(401).JSON(fiber.Map{
+// 			"message": "Unauthorized",
+// 		})
+// 	}
+
+func GetMyEmployeeProfile(c fiber.Ctx) error {
+	userID, ok := c.Locals("user_id").(int64)
+	if !ok {
+		return c.Status(401).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
+	var result EmployeeProfileResponse
+
+	err := config.DB.QueryRow(
+		context.Background(),
+		`
+		SELECT
+			e.id,
+			e.user_id,
+			u.email,
+			e.employee_code,
+			e.full_name,
+			e.position,
+			e.phone,
+			e.avatar_url,
+			e.department_id,
+			d.name
+			FROM employees e
+			JOIN users u ON u.id = e.user_id
+			LEFT JOIN departments d ON d.id = e.department_id
+			WHERE e.user_id = $1
+		`,
+		userID,
+	).Scan(
+		&result.ID,
+		&result.UserID,
+		&result.Email,
+		&result.EmployeeCode,
+		&result.FullName,
+		&result.Position,
+		&result.Phone,
+		&result.AvatarURL,
+		&result.DepartmentID,
+		&result.Department,
+	)
+
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"message": "Employee profile not found",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Employe profile fetched successfully",
+		"data":    result,
+	})
+
 }
