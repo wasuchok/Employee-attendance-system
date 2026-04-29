@@ -4,6 +4,8 @@ import 'package:app/features/character/domain/models/character_option.dart';
 import 'package:app/features/character/presentation/widgets/character_circle.dart';
 import 'package:app/features/character/presentation/widgets/circle_arrow_button.dart';
 import 'package:app/features/character/presentation/widgets/mock_profile_input.dart';
+import 'package:app/shared/widgets/app_button.dart';
+import 'package:app/shared/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 
 class CharacterSelectCard extends StatelessWidget {
@@ -137,48 +139,29 @@ class CharacterSelectCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 24),
-                        const MockProfileInput(
-                          label: 'Employee Code',
-                          initialValue: 'EMP001',
+                        AppTextField(
+                          label: "Employee Code",
+                          hint: 'Enter employee code',
                         ),
                         const SizedBox(height: 12),
-                        const MockProfileInput(
+                        AppTextField(
                           label: 'Full Name',
-                          initialValue: 'Wasuchok Jainam',
+                          hint: 'Enter full name',
                         ),
                         const SizedBox(height: 12),
-                        const MockProfileInput(
-                          label: 'Position',
-                          initialValue: 'Backend Developer',
-                        ),
+                        AppTextField(label: 'Position', hint: 'Enter position'),
                         const SizedBox(height: 12),
-                        const MockProfileInput(
+                        AppTextField(
                           label: 'Phone',
-                          initialValue: '0999999999',
+                          hint: 'Enter phone number',
                           keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 20),
-                        SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: onContinue,
-
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: AppColors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: const Text(
-                              'Continue',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
+                        AppButton(
+                          text: 'Continue',
+                          onPressed: () {
+                            onContinue();
+                          },
                         ),
                       ],
                     ),

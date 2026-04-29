@@ -1,10 +1,7 @@
 import 'package:app/core/theme/app_colors.dart';
 import 'package:app/features/character/data/character_mock_data.dart';
-import 'package:app/features/character/presentation/widgets/character_circle.dart';
 import 'package:app/features/character/presentation/widgets/character_select_card.dart';
 import 'package:app/features/character/presentation/widgets/character_select_header.dart';
-import 'package:app/features/character/presentation/widgets/circle_arrow_button.dart';
-import 'package:app/features/character/presentation/widgets/mock_profile_input.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
