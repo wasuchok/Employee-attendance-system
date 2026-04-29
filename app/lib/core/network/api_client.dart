@@ -88,8 +88,15 @@ class ApiClient {
       data: {'refresh_token': refreshToken},
     );
 
-    final accessToken = response.data['access_token'];
-    final newRefreshToken = response.data['refresh_token'];
+    final data = response.data;
+    final tokenData = data is Map ? data['tokens'] : null;
+
+    if (tokenData is! Map) {
+      return null;
+    }
+
+    final accessToken = tokenData['access_token'];
+    final newRefreshToken = tokenData['refresh_token'];
 
     if (accessToken == null || newRefreshToken == null) {
       return null;

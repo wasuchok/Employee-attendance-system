@@ -3,10 +3,12 @@ package auth
 import (
 	"backend/config"
 	"context"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type RegisterRequest struct {
@@ -187,6 +189,17 @@ func RefreshToken(c fiber.Ctx) error {
 		})
 	}
 
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(body.RefreshToken, claims, func(t *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_REFRESH_SECRET")), nil
+	})
+
+	if err != nil || !token.Valid {
+		return c.Status(401).JSON(fiber.Map{
+			"message": "Invalid refresh token",
+		})
+	}
+
 	tokenHash := HashToken(body.RefreshToken)
 
 	var userID int64
@@ -195,7 +208,7 @@ func RefreshToken(c fiber.Ctx) error {
 	var expiresAt time.Time
 	var revokedAt *time.Time
 
-	err := config.DB.QueryRow(
+	err = config.DB.QueryRow(
 		context.Background(),
 		`
 		SELECT rt.user_id, u.email, u.role, rt.expires_at, rt.revoked_at
@@ -224,22 +237,45 @@ func RefreshToken(c fiber.Ctx) error {
 		})
 	}
 
-	_, _ = config.DB.Exec(context.Background(),
+	_, err = config.DB.Exec(context.Background(),
 		`UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = $1`,
 		tokenHash,
 	)
 
-	newAccessToken, _ := GenerateAccessToken(userID, email, role)
-	newRefreshToken, newExpiresAt, _ := GenerateRefreshToken(userID, email, role)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Could not revoke refresh token",
+		})
+	}
+
+	newAccessToken, err := GenerateAccessToken(userID, email, role)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Could not generate access token",
+		})
+	}
+
+	newRefreshToken, newExpiresAt, err := GenerateRefreshToken(userID, email, role)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Could not generate refresh token",
+		})
+	}
 
 	newHash := HashToken(newRefreshToken)
 
-	_, _ = config.DB.Exec(context.Background(),
+	_, err = config.DB.Exec(context.Background(),
 		`INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
 		userID,
 		newHash,
 		newExpiresAt,
 	)
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Could not save refresh token",
+		})
+	}
 
 	return c.JSON(fiber.Map{
 		"access_token":  newAccessToken,
