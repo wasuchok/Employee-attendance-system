@@ -1,11 +1,12 @@
+import 'package:app/core/auth/auth_session.dart';
 import 'package:app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:app/features/auth/presentation/bloc/auth_state.dart';
-import 'package:app/features/home/presentation/pages/home_page.dart';
 import 'package:app/shared/widgets/app_button.dart';
 import 'package:app/shared/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
@@ -45,10 +46,8 @@ class _LoginPageState extends State<LoginPage> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthSuccess) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomePage()),
-          );
+          context.read<AuthSession>().markAuthenticated();
+          context.go('/home');
         }
 
         if (state is AuthFailure) {
