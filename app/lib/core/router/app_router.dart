@@ -1,4 +1,7 @@
 import 'package:app/core/auth/auth_session.dart';
+import 'package:app/features/admin/presentation/pages/admin_page.dart';
+import 'package:app/features/auth/presentation/pages/forbidden_page.dart';
+import 'package:app/features/character/presentation/pages/character_select_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/features/auth/presentation/pages/login_page.dart';
@@ -15,6 +18,7 @@ GoRouter createAppRouter({required AuthSession authSession}) {
 
       final isSplash = location == '/splash';
       final isLogin = location == '/login';
+      final isAdminRoute = location.startsWith('/admin');
 
       if (status == AuthStatus.unknown) {
         return isSplash ? null : '/splash';
@@ -28,6 +32,10 @@ GoRouter createAppRouter({required AuthSession authSession}) {
         if (isSplash || isLogin) {
           return '/home';
         }
+
+        if (isAdminRoute && authSession.role != 'admin') {
+          return '/forbidden';
+        }
       }
 
       return null;
@@ -40,6 +48,15 @@ GoRouter createAppRouter({required AuthSession authSession}) {
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+      GoRoute(path: '/admin', builder: (context, state) => const AdminPage()),
+      GoRoute(
+        path: '/forbidden',
+        builder: (context, state) => const ForbiddenPage(),
+      ),
+      GoRoute(
+        path: '/select_character',
+        builder: (context, state) => const CharacterSelectPage(),
+      ),
     ],
   );
 }

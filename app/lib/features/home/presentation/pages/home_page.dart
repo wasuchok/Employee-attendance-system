@@ -95,6 +95,20 @@ class _HomePageState extends State<HomePage> {
                 onPressed: _isLoading ? null : _callProtectedApi,
                 child: Text(_isLoading ? 'Loading...' : 'Call /api/me'),
               ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  context.go('/admin');
+                },
+                child: const Text('Go Admin'),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  context.go('/select_character');
+                },
+                child: const Text('Select Character'),
+              ),
               const SizedBox(height: 16),
               Text(_result, textAlign: TextAlign.center),
               const SizedBox(height: 24),
