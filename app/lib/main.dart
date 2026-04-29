@@ -52,6 +52,7 @@ class _EmployeeAttendanceAppState extends State<EmployeeAttendanceApp> {
       providers: [
         RepositoryProvider.value(value: apiClient),
         RepositoryProvider.value(value: tokenStorage),
+        RepositoryProvider.value(value: authRemoteDatasource),
       ],
       child: ChangeNotifierProvider.value(
         value: authSession,

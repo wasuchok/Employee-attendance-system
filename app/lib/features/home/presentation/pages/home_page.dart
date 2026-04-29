@@ -1,8 +1,11 @@
+import 'package:app/core/auth/auth_session.dart';
 import 'package:app/core/constants/api_constants.dart';
 import 'package:app/core/network/api_client.dart';
+import 'package:app/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +16,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _isLoading = false;
+  bool _isLoggingOut = false;
   String _result = 'ยังไม่ได้เรียก API';
 
   Future<void> _callProtectedApi() async {
@@ -46,6 +50,30 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _logout() async {
+    setState(() {
+      _isLoggingOut = true;
+    });
+
+    try {
+      final authRemoteDatasource = context.read<AuthRemoteDatasource>();
+      final authSession = context.read<AuthSession>();
+
+      await authRemoteDatasource.logout();
+      await authSession.logout();
+
+      if (mounted) {
+        context.go('/login');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoggingOut = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,6 +97,11 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 16),
               Text(_result, textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              OutlinedButton(
+                onPressed: _isLoggingOut ? null : _logout,
+                child: Text(_isLoggingOut ? 'Logging out...' : 'Logout'),
+              ),
             ],
           ),
         ),

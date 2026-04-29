@@ -41,4 +41,19 @@ class AuthRemoteDatasource {
       refreshToken: refreshToken,
     );
   }
+
+  Future<void> logout() async {
+    try {
+      final refreshToken = await tokenStorage.getRefreshToken();
+
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await apiClient.post(
+          ApiConstants.logout,
+          data: {'refresh_token': refreshToken},
+        );
+      }
+    } finally {
+      await tokenStorage.clearTokens();
+    }
+  }
 }
