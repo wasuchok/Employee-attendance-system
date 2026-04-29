@@ -7,6 +7,7 @@ class CircleArrowButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   const CircleArrowButton({
+    super.key,
     required this.icon,
     required this.tooltip,
     required this.onPressed,

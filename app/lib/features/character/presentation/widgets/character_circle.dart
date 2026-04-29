@@ -4,8 +4,14 @@ import 'package:flutter/material.dart';
 class CharacterCircle extends StatelessWidget {
   final String asset;
   final String name;
+  final double size;
 
-  const CharacterCircle({required this.asset, required this.name});
+  const CharacterCircle({
+    super.key,
+    required this.asset,
+    required this.name,
+    this.size = 168,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,9 +21,9 @@ class CharacterCircle extends StatelessWidget {
       switchOutCurve: Curves.easeIn,
       child: Container(
         key: ValueKey(asset),
-        width: 168,
-        height: 168,
-        padding: const EdgeInsets.all(10),
+        width: size,
+        height: size,
+        padding: EdgeInsets.all(size * 0.06),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: const Color(0xFFEAF1FF),

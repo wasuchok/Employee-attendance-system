@@ -7,6 +7,7 @@ class MockProfileInput extends StatelessWidget {
   final TextInputType? keyboardType;
 
   const MockProfileInput({
+    super.key,
     required this.label,
     required this.initialValue,
     this.keyboardType,
