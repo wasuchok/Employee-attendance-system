@@ -2,6 +2,7 @@ import 'package:app/core/network/api_client.dart';
 import 'package:app/core/storage/token_storage.dart';
 import 'package:app/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:app/features/auth/presentation/pages/auth_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -23,15 +24,21 @@ class EmployeeAttendanceApp extends StatelessWidget {
       tokenStorage: tokenStorage,
     );
 
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        BlocProvider(
-          create: (_) => AuthBloc(authRemoteDatasource: authRemoteDatasource),
-        ),
+        RepositoryProvider.value(value: apiClient),
+        RepositoryProvider.value(value: tokenStorage),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: const LoginPage(),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) => AuthBloc(authRemoteDatasource: authRemoteDatasource),
+          ),
+        ],
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: AuthGate(tokenStorage: tokenStorage),
+        ),
       ),
     );
   }

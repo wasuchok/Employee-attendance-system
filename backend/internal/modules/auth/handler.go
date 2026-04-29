@@ -278,8 +278,13 @@ func RefreshToken(c fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"access_token":  newAccessToken,
-		"refresh_token": newRefreshToken,
+		"message": "Refresh token successful",
+		"tokens": fiber.Map{
+			"access_token":  newAccessToken,
+			"refresh_token": newRefreshToken,
+			"token_type":    "Bearer",
+			"expires_in":    int64(15 * time.Minute / time.Second),
+		},
 	})
 }
 

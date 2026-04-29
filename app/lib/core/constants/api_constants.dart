@@ -3,4 +3,5 @@ class ApiConstants {
 
   static const String login = '/auth/login';
   static const String refreshToken = '/auth/refresh';
+  static const String me = '/me';
 }
