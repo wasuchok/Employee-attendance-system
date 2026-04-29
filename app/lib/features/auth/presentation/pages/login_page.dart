@@ -41,13 +41,32 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _handleLoginSuccess() async {
+    final authSession = context.read<AuthSession>();
+
+    try {
+      await authSession.refreshCurrentUser();
+
+      if (mounted) {
+        context.go('/home');
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not fetch user data. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthSuccess) {
-          context.read<AuthSession>().markAuthenticated();
-          context.go('/home');
+          _handleLoginSuccess();
         }
 
         if (state is AuthFailure) {

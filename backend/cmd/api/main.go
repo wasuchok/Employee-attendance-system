@@ -30,7 +30,11 @@ func main() {
 
 	app.Get("/api/me", auth.Protected(), func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"user_id": c.Locals("user_id"),
+			"user": fiber.Map{
+				"id":    c.Locals("user_id"),
+				"email": c.Locals("email"),
+				"role":  c.Locals("role"),
+			},
 		})
 	})
 
