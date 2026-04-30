@@ -14,6 +14,20 @@ class CharacterSelectPage extends StatefulWidget {
 
 class _CharacterSelectPageState extends State<CharacterSelectPage> {
   int selectedIndex = 0;
+  final formKey = GlobalKey<FormState>();
+  final employeeCodeController = TextEditingController();
+  final fullNameController = TextEditingController();
+  final positionController = TextEditingController();
+  final phoneController = TextEditingController();
+
+  @override
+  void dispose() {
+    employeeCodeController.dispose();
+    fullNameController.dispose();
+    positionController.dispose();
+    phoneController.dispose();
+    super.dispose();
+  }
 
   void _showPreviousCharacter() {
     setState(() {
@@ -31,6 +45,16 @@ class _CharacterSelectPageState extends State<CharacterSelectPage> {
     });
   }
 
+  void _continue() {
+    final isValid = formKey.currentState?.validate() ?? false;
+
+    if (!isValid) {
+      return;
+    }
+
+    context.go('/home');
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedCharacter = characterOptions[selectedIndex];
@@ -44,11 +68,14 @@ class _CharacterSelectPageState extends State<CharacterSelectPage> {
             selectedCharacter: selectedCharacter,
             selectedIndex: selectedIndex,
             characterCount: characterOptions.length,
+            formKey: formKey,
+            employeeCodeController: employeeCodeController,
+            fullNameController: fullNameController,
+            positionController: positionController,
+            phoneController: phoneController,
             onPrevious: _showPreviousCharacter,
             onNext: _showNextCharacter,
-            onContinue: () {
-              context.go('/home');
-            },
+            onContinue: _continue,
           ),
         ],
       ),

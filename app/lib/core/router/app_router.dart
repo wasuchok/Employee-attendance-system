@@ -18,6 +18,7 @@ GoRouter createAppRouter({required AuthSession authSession}) {
 
       final isSplash = location == '/splash';
       final isLogin = location == '/login';
+      final isSelectCharacter = location == '/select_character';
       final isAdminRoute = location.startsWith('/admin');
 
       if (status == AuthStatus.unknown) {
@@ -28,8 +29,12 @@ GoRouter createAppRouter({required AuthSession authSession}) {
         return isLogin ? null : '/login';
       }
 
+      if (status == AuthStatus.needsEmployeeProfile) {
+        return isSelectCharacter ? null : '/select_character';
+      }
+
       if (status == AuthStatus.authenticated) {
-        if (isSplash || isLogin) {
+        if (isSplash || isLogin || isSelectCharacter) {
           return '/home';
         }
 

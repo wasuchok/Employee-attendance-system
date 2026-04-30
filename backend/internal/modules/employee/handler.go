@@ -29,6 +29,7 @@ type EmployeeProfileResponse struct {
 	Phone        *string `json:"phone"`
 	AvatarURL    *string `json:"avatar_url"`
 	DepartmentID *int64  `json:"department_id"`
+	Role         string  `json:"role"`
 	Department   *string `json:"department"`
 }
 
@@ -149,6 +150,7 @@ func GetMyEmployeeProfile(c fiber.Ctx) error {
 			e.phone,
 			e.avatar_url,
 			e.department_id,
+			e.role,
 			d.name
 			FROM employees e
 			JOIN users u ON u.id = e.user_id
@@ -166,6 +168,7 @@ func GetMyEmployeeProfile(c fiber.Ctx) error {
 		&result.Phone,
 		&result.AvatarURL,
 		&result.DepartmentID,
+		&result.Role,
 		&result.Department,
 	)
 

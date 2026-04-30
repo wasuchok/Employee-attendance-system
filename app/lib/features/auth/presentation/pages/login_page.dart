@@ -48,7 +48,11 @@ class _LoginPageState extends State<LoginPage> {
       await authSession.refreshCurrentUser();
 
       if (mounted) {
-        context.go('/home');
+        if (authSession.status == AuthStatus.needsEmployeeProfile) {
+          context.go('/select_character');
+        } else {
+          context.go('/home');
+        }
       }
     } catch (_) {
       if (mounted) {

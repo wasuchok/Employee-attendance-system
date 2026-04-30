@@ -1,9 +1,15 @@
 import 'package:app/core/constants/api_constants.dart';
 import 'package:app/core/network/api_client.dart';
 import 'package:app/core/storage/token_storage.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-enum AuthStatus { unknown, authenticated, unauthenticated }
+enum AuthStatus {
+  unknown,
+  authenticated,
+  needsEmployeeProfile,
+  unauthenticated,
+}
 
 class AuthSession extends ChangeNotifier {
   final TokenStorage tokenStorage;
@@ -43,6 +49,16 @@ class AuthSession extends ChangeNotifier {
       final response = await apiClient.get(ApiConstants.me);
       _setUserFromResponse(response.data);
       _setStatus(AuthStatus.authenticated);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        _clearUser();
+        _setStatus(AuthStatus.needsEmployeeProfile);
+        return;
+      }
+
+      _clearUser();
+      await tokenStorage.clearTokens();
+      _setStatus(AuthStatus.unauthenticated);
     } catch (_) {
       _clearUser();
       await tokenStorage.clearTokens();
@@ -61,15 +77,19 @@ class AuthSession extends ChangeNotifier {
   }
 
   void _setUserFromResponse(dynamic data) {
-    if (data is! Map || data['user'] is! Map) {
+    if (data is! Map) {
       return;
     }
 
-    final user = data['user'] as Map;
+    final userData = data['data'] ?? data['user'];
 
-    final id = user['id'];
-    final email = user['email'];
-    final role = user['role'];
+    if (userData is! Map) {
+      return;
+    }
+
+    final id = userData['user_id'] ?? userData['id'];
+    final email = userData['email'];
+    final role = userData['role'];
 
     if (id is int) {
       _userId = id;
@@ -85,9 +105,19 @@ class AuthSession extends ChangeNotifier {
   }
 
   Future<void> refreshCurrentUser() async {
-    final response = await apiClient.get(ApiConstants.me);
-    _setUserFromResponse(response.data);
-    _setStatus(AuthStatus.authenticated);
+    try {
+      final response = await apiClient.get(ApiConstants.me);
+      _setUserFromResponse(response.data);
+      _setStatus(AuthStatus.authenticated);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        _clearUser();
+        _setStatus(AuthStatus.needsEmployeeProfile);
+        return;
+      }
+
+      rethrow;
+    }
   }
 
   void _clearUser() {

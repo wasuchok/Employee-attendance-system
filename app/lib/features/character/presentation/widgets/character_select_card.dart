@@ -7,6 +7,7 @@ import 'package:app/shared/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 
 class CharacterSelectCard extends StatefulWidget {
+  final GlobalKey<FormState> formKey;
   final CharacterOption selectedCharacter;
   final int selectedIndex;
   final int characterCount;
@@ -14,11 +15,21 @@ class CharacterSelectCard extends StatefulWidget {
   final VoidCallback onNext;
   final VoidCallback onContinue;
 
+  final TextEditingController employeeCodeController;
+  final TextEditingController fullNameController;
+  final TextEditingController positionController;
+  final TextEditingController phoneController;
+
   const CharacterSelectCard({
     super.key,
     required this.selectedCharacter,
     required this.selectedIndex,
     required this.characterCount,
+    required this.formKey,
+    required this.employeeCodeController,
+    required this.fullNameController,
+    required this.positionController,
+    required this.phoneController,
     required this.onPrevious,
     required this.onNext,
     required this.onContinue,
@@ -102,136 +113,184 @@ class _CharacterSelectCardState extends State<CharacterSelectCard> {
                     final avatarSize = isCompact ? 124.0 : 148.0;
                     final sectionGap = isCompact ? 16.0 : 20.0;
 
-                    return SingleChildScrollView(
-                      controller: _scrollController,
-                      padding: EdgeInsets.only(bottom: _canScrollDown ? 34 : 0),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: constraints.maxHeight,
+                    return Form(
+                      key: widget.formKey,
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        padding: EdgeInsets.only(
+                          bottom: _canScrollDown ? 34 : 0,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text(
-                              'Choose your character',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: AppColors.black,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Pick one avatar for your attendance profile.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: AppColors.grey,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: sectionGap),
-                            Row(
-                              children: [
-                                CircleArrowButton(
-                                  icon: Icons.chevron_left,
-                                  tooltip: 'Previous character',
-                                  onPressed: widget.onPrevious,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text(
+                                'Choose your character',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppColors.black,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
                                 ),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      CharacterCircle(
-                                        asset: widget.selectedCharacter.asset,
-                                        name: widget.selectedCharacter.name,
-                                        size: avatarSize,
-                                      ),
-                                      const SizedBox(height: 12),
-                                      AnimatedSwitcher(
-                                        duration: const Duration(
-                                          milliseconds: 180,
-                                        ),
-                                        child: Text(
-                                          widget.selectedCharacter.name,
-                                          key: ValueKey(
-                                            widget.selectedCharacter.name,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            color: AppColors.black,
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: List.generate(
-                                          widget.characterCount,
-                                          (index) => AnimatedContainer(
-                                            duration: const Duration(
-                                              milliseconds: 160,
-                                            ),
-                                            width: widget.selectedIndex == index
-                                                ? 18
-                                                : 6,
-                                            height: 6,
-                                            margin: const EdgeInsets.symmetric(
-                                              horizontal: 3,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  widget.selectedIndex == index
-                                                  ? AppColors.primary
-                                                  : const Color(0xFFE5E7EB),
-                                              borderRadius:
-                                                  BorderRadius.circular(999),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Pick one avatar for your attendance profile.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppColors.grey,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: sectionGap),
+                              Row(
+                                children: [
+                                  CircleArrowButton(
+                                    icon: Icons.chevron_left,
+                                    tooltip: 'Previous character',
+                                    onPressed: widget.onPrevious,
                                   ),
-                                ),
-                                CircleArrowButton(
-                                  icon: Icons.chevron_right,
-                                  tooltip: 'Next character',
-                                  onPressed: widget.onNext,
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: sectionGap),
-                            const AppTextField(
-                              label: 'Employee Code',
-                              hint: 'EMP001',
-                            ),
-                            const SizedBox(height: 10),
-                            const AppTextField(
-                              label: 'Full Name',
-                              hint: 'Wasuchok Jainam',
-                            ),
-                            const SizedBox(height: 10),
-                            const AppTextField(
-                              label: 'Position',
-                              hint: 'Backend Developer',
-                            ),
-                            const SizedBox(height: 10),
-                            const AppTextField(
-                              label: 'Phone',
-                              hint: '0999999999',
-                              keyboardType: TextInputType.phone,
-                            ),
-                            SizedBox(height: sectionGap),
-                            AppButton(
-                              text: 'Continue',
-                              height: 46,
-                              onPressed: widget.onContinue,
-                            ),
-                          ],
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CharacterCircle(
+                                          asset: widget.selectedCharacter.asset,
+                                          name: widget.selectedCharacter.name,
+                                          size: avatarSize,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        AnimatedSwitcher(
+                                          duration: const Duration(
+                                            milliseconds: 180,
+                                          ),
+                                          child: Text(
+                                            widget.selectedCharacter.name,
+                                            key: ValueKey(
+                                              widget.selectedCharacter.name,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              color: AppColors.black,
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: List.generate(
+                                            widget.characterCount,
+                                            (index) => AnimatedContainer(
+                                              duration: const Duration(
+                                                milliseconds: 160,
+                                              ),
+                                              width:
+                                                  widget.selectedIndex == index
+                                                  ? 18
+                                                  : 6,
+                                              height: 6,
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 3,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    widget.selectedIndex ==
+                                                        index
+                                                    ? AppColors.primary
+                                                    : const Color(0xFFE5E7EB),
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  CircleArrowButton(
+                                    icon: Icons.chevron_right,
+                                    tooltip: 'Next character',
+                                    onPressed: widget.onNext,
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: sectionGap),
+                              AppTextField(
+                                label: 'Employee Code',
+                                hint: 'EMP001',
+                                controller: widget.employeeCodeController,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter your employee code';
+                                  }
+
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 10),
+                              AppTextField(
+                                label: 'Full Name',
+                                hint: 'Wasuchok Jainam',
+                                controller: widget.fullNameController,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter your full name';
+                                  }
+
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 10),
+                              AppTextField(
+                                label: 'Position',
+                                hint: 'Backend Developer',
+                                controller: widget.positionController,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter your position';
+                                  }
+
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 10),
+                              AppTextField(
+                                label: 'Phone',
+                                hint: '0999999999',
+                                keyboardType: TextInputType.phone,
+                                controller: widget.phoneController,
+                                validator: (value) {
+                                  final phone = value?.trim() ?? '';
+
+                                  if (phone.isEmpty) {
+                                    return 'Please enter your phone number';
+                                  }
+
+                                  if (!RegExp(
+                                    r'^[0-9]{9,10}$',
+                                  ).hasMatch(phone)) {
+                                    return 'Please enter a valid phone number';
+                                  }
+
+                                  return null;
+                                },
+                              ),
+                              SizedBox(height: sectionGap),
+                              AppButton(
+                                text: 'Continue',
+                                height: 46,
+                                onPressed: widget.onContinue,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
