@@ -2,6 +2,10 @@ import 'package:app/core/auth/auth_session.dart';
 import 'package:app/features/admin/presentation/pages/admin_page.dart';
 import 'package:app/features/auth/presentation/pages/forbidden_page.dart';
 import 'package:app/features/character/presentation/pages/character_select_page.dart';
+import 'package:app/features/history/presentation/pages/history_page.dart';
+import 'package:app/features/leave/presentation/pages/leave_page.dart';
+import 'package:app/features/main/presentation/pages/main_shell_page.dart';
+import 'package:app/features/profile/presentation/pages/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/features/auth/presentation/pages/login_page.dart';
@@ -21,6 +25,12 @@ GoRouter createAppRouter({required AuthSession authSession}) {
       final isSelectCharacter = location == '/select_character';
       final isAdminRoute = location.startsWith('/admin');
 
+      final isMainRoute =
+          location == '/home' ||
+          location == '/history' ||
+          location == '/leave' ||
+          location == '/profile';
+
       if (status == AuthStatus.unknown) {
         return isSplash ? null : '/splash';
       }
@@ -38,7 +48,7 @@ GoRouter createAppRouter({required AuthSession authSession}) {
           return '/home';
         }
 
-        if (isAdminRoute && authSession.role != 'admin') {
+        if (!isMainRoute && isAdminRoute && authSession.role != 'admin') {
           return '/forbidden';
         }
       }
@@ -52,7 +62,6 @@ GoRouter createAppRouter({required AuthSession authSession}) {
             const Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
-      GoRoute(path: '/home', builder: (context, state) => const HomePage()),
       GoRoute(path: '/admin', builder: (context, state) => const AdminPage()),
       GoRoute(
         path: '/forbidden',
@@ -61,6 +70,26 @@ GoRouter createAppRouter({required AuthSession authSession}) {
       GoRoute(
         path: '/select_character',
         builder: (context, state) => const CharacterSelectPage(),
+      ),
+      ShellRoute(
+        builder: (context, state, child) {
+          return MainShellPage(child: child);
+        },
+        routes: [
+          GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+          GoRoute(
+            path: '/history',
+            builder: (context, state) => const HistoryPage(),
+          ),
+          GoRoute(
+            path: '/leave',
+            builder: (context, state) => const LeavePage(),
+          ),
+          GoRoute(
+            path: '/profile',
+            builder: (context, state) => const ProfilePage(),
+          ),
+        ],
       ),
     ],
   );
