@@ -4,6 +4,8 @@ import 'package:app/core/router/app_router.dart';
 import 'package:app/core/storage/token_storage.dart';
 import 'package:app/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:app/features/character/data/datasources/character_remote_datasource.dart';
+import 'package:app/features/character/presentation/bloc/character_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -53,7 +55,12 @@ class _EmployeeAttendanceAppState extends State<EmployeeAttendanceApp> {
         RepositoryProvider.value(value: apiClient),
         RepositoryProvider.value(value: tokenStorage),
         RepositoryProvider.value(value: authRemoteDatasource),
+        Provider(
+          create: (context) =>
+              CharacterRemoteDatasource(apiClient: context.read<ApiClient>()),
+        ),
       ],
+
       child: ChangeNotifierProvider.value(
         value: authSession,
         child: MultiBlocProvider(
@@ -61,6 +68,12 @@ class _EmployeeAttendanceAppState extends State<EmployeeAttendanceApp> {
             BlocProvider(
               create: (_) =>
                   AuthBloc(authRemoteDatasource: authRemoteDatasource),
+            ),
+            BlocProvider(
+              create: (context) => CharacterBloc(
+                characterRemoteDatasource: context
+                    .read<CharacterRemoteDatasource>(),
+              ),
             ),
           ],
           child: MaterialApp.router(

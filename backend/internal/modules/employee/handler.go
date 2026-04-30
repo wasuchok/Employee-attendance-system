@@ -7,6 +7,7 @@ import (
 	"backend/config"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/jackc/pgx/v5"
 )
 
 type CreateMyEmployeeProfileRequest struct {
@@ -150,7 +151,7 @@ func GetMyEmployeeProfile(c fiber.Ctx) error {
 			e.phone,
 			e.avatar_url,
 			e.department_id,
-			e.role,
+			u.role,
 			d.name
 			FROM employees e
 			JOIN users u ON u.id = e.user_id
@@ -173,13 +174,24 @@ func GetMyEmployeeProfile(c fiber.Ctx) error {
 	)
 
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{
-			"message": "Employee profile not found",
+		if err == pgx.ErrNoRows {
+			return c.Status(404).JSON(fiber.Map{
+				"message": "Employee profile not found",
+			})
+		}
+
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Could not fetch employee profile",
+			"error":   err.Error(),
 		})
 	}
 
+	if result.Role == "" {
+		result.Role = "employee"
+	}
+
 	return c.JSON(fiber.Map{
-		"message": "Employe profile fetched successfully",
+		"message": "Employee profile fetched successfully",
 		"data":    result,
 	})
 

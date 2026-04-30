@@ -14,6 +14,7 @@ class CharacterSelectCard extends StatefulWidget {
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onContinue;
+  final bool isLoading;
 
   final TextEditingController employeeCodeController;
   final TextEditingController fullNameController;
@@ -33,6 +34,7 @@ class CharacterSelectCard extends StatefulWidget {
     required this.onPrevious,
     required this.onNext,
     required this.onContinue,
+    required this.isLoading,
   });
 
   @override
@@ -287,6 +289,7 @@ class _CharacterSelectCardState extends State<CharacterSelectCard> {
                               AppButton(
                                 text: 'Continue',
                                 height: 46,
+                                isLoading: widget.isLoading,
                                 onPressed: widget.onContinue,
                               ),
                             ],
