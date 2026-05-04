@@ -2,12 +2,15 @@ import 'package:app/core/auth/auth_session.dart';
 import 'package:app/core/network/api_client.dart';
 import 'package:app/core/router/app_router.dart';
 import 'package:app/core/storage/token_storage.dart';
+import 'package:app/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:app/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:app/features/character/data/datasources/character_remote_datasource.dart';
 import 'package:app/features/character/presentation/bloc/character_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:app/features/attendance/data/datasources/attendance_remote_datasource.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -59,6 +62,10 @@ class _EmployeeAttendanceAppState extends State<EmployeeAttendanceApp> {
           create: (context) =>
               CharacterRemoteDatasource(apiClient: context.read<ApiClient>()),
         ),
+        Provider(
+          create: (context) =>
+              AttendanceRemoteDatasource(apiClient: context.read<ApiClient>()),
+        ),
       ],
 
       child: ChangeNotifierProvider.value(
@@ -73,6 +80,12 @@ class _EmployeeAttendanceAppState extends State<EmployeeAttendanceApp> {
               create: (context) => CharacterBloc(
                 characterRemoteDatasource: context
                     .read<CharacterRemoteDatasource>(),
+              ),
+            ),
+            BlocProvider(
+              create: (context) => AttendanceBloc(
+                attendanceRemoteDatasource: context
+                    .read<AttendanceRemoteDatasource>(),
               ),
             ),
           ],

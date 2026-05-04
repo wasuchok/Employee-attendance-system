@@ -1,5 +1,8 @@
+import 'package:app/core/network/api_client.dart';
 import 'package:app/core/theme/app_colors.dart';
+import 'package:app/features/attendance/data/datasources/attendance_remote_datasource.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -177,8 +180,41 @@ class _CloudIcon extends StatelessWidget {
   }
 }
 
-class _TodayCard extends StatelessWidget {
+class _TodayCard extends StatefulWidget {
   const _TodayCard();
+
+  @override
+  State<_TodayCard> createState() => _TodayCardState();
+}
+
+class _TodayCardState extends State<_TodayCard> {
+  bool _isSubmitting = false;
+
+  Future<void> _checkIn() async {
+    if (_isSubmitting) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final ds = AttendanceRemoteDatasource(apiClient: context.read<ApiClient>());
+
+    try {
+      await ds.checkIn(
+        officeLocationId: 1,
+        checkInLatitude: 13.7563,
+        checkInLongitude: 100.5018,
+        note: '',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Check-in failed: $e')));
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +309,7 @@ class _TodayCard extends StatelessWidget {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: _isSubmitting ? null : _checkIn,
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
                   backgroundColor: AppColors.danger,
@@ -282,9 +318,12 @@ class _TodayCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  'Check-out',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                child: Text(
+                  _isSubmitting ? 'Checking in...' : 'Check-in',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ),

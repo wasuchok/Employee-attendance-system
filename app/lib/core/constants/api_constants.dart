@@ -6,4 +6,8 @@ class ApiConstants {
   static const String me = '/employees/me';
   static const String logout = '/auth/logout';
   static const String createEmployeeProfile = '/employees/me';
+
+  static const String attendanceCheckIn = '/attendances/check-in';
+  static const String attendanceToday = '/attendances/today';
+  static const String attendanceHistory = '/attendances/history';
 }
