@@ -4,6 +4,7 @@ import (
 	"backend/config"
 	"context"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -13,6 +14,16 @@ type CreateOfficeLocationRequest struct {
 	Latitude            float64 `json:"latitude"`
 	Longitude           float64 `json:"longitude"`
 	AllowedRadiusMeters int     `json:"allowed_radius_meters"`
+}
+
+type OfficeLocationResponse struct {
+	ID                  string    `json:"id"`
+	Name                string    `json:"name"`
+	Latitude            float64   `json:"latitude"`
+	Longitude           float64   `json:"longitude"`
+	AllowedRadiusMeters int       `json:"allowed_radius_meters"`
+	IsActive            bool      `json:"is_active"`
+	CreateAt            time.Time `json:"created_at"`
 }
 
 func CreateOfficeLocation(c fiber.Ctx) error {
@@ -73,5 +84,48 @@ func CreateOfficeLocation(c fiber.Ctx) error {
 			"longitude":             body.Longitude,
 			"allowed_radius_meters": body.AllowedRadiusMeters,
 		},
+	})
+}
+
+func GetOfficeLocation(c fiber.Ctx) error {
+	var results []OfficeLocationResponse // ใช้ slice เพื่อเก็บหลายๆ รายการ
+
+	rows, err := config.DB.Query(
+		context.Background(),
+		`
+		SELECT id, name, latitude, longitude, allowed_radius_meters, is_active, created_at FROM office_locations
+		WHERE is_active = true
+		`,
+	)
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Could not fetch office locations",
+			"error":   err.Error(),
+		})
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var result OfficeLocationResponse
+		if err := rows.Scan(&result.ID, &result.Name, &result.Latitude, &result.Longitude, &result.AllowedRadiusMeters, &result.IsActive, &result.CreateAt); err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"message": "Could not scan office location",
+				"error":   err.Error(),
+			})
+		}
+		results = append(results, result)
+	}
+
+	if err := rows.Err(); err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Error during rows iteration",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Office locations fetched successfully",
+		"data":    results,
 	})
 }

@@ -39,3 +39,22 @@ func Protected() fiber.Handler {
 		return c.Next()
 	}
 }
+
+func AdminOnly() fiber.Handler {
+	return func(c fiber.Ctx) error {
+		role, ok := c.Locals("role").(string)
+		if !ok || role == "" {
+			return c.Status(401).JSON(fiber.Map{
+				"message": "Unauthorized",
+			})
+		}
+
+		if role != "admin" {
+			return c.Status(403).JSON(fiber.Map{
+				"message": "Forbidden: admin only",
+			})
+		}
+
+		return c.Next()
+	}
+}

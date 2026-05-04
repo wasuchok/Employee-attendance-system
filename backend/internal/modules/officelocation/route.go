@@ -9,5 +9,6 @@ import (
 func RegisterOfficeLocationRoutes(app *fiber.App) {
 	office_locations := app.Group("/api/office_locations")
 
-	office_locations.Post("/create", auth.Protected(), CreateOfficeLocation)
+	office_locations.Post("/create", auth.Protected(), auth.AdminOnly(), CreateOfficeLocation)
+	office_locations.Get("/lists", GetOfficeLocation)
 }
