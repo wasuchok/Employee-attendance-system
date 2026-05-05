@@ -1,116 +1,29 @@
-ระบบ Employee Attendance - TODO / Handoff
+TODO ที่เหลือ
 
-สถานะล่าสุด
-- ฝั่ง Backend เพิ่ม API attendance แล้ว:
-  - POST /api/attendances/check-in
-  - GET /api/attendances/today
-  - GET /api/attendances/history
-- ฝั่ง Flutter หน้า Home ใช้ AttendanceBloc สำหรับ flow check-in แล้ว
-- หน้า Home โหลดข้อมูล attendance ของวันนี้ และแสดงเวลา check-in จาก backend แล้ว
-- สถานะบนการ์ด Today Attendance แสดง Checked in / Not checked in ตามข้อมูล attendance วันนี้
-- office_location_id ไม่ได้ hardcode ตรงๆ เป็น 1 แล้ว
-  - Flutter โหลดรายการ office location จาก /api/office_locations/lists
-  - ตอนนี้เลือก office location ตัวแรกมาใช้ก่อน
+1. ทดสอบ check-in บนแอปจริง
+   - ถ้ายังเจอ 500 ให้ดู field "error" จาก backend response
 
-สิ่งที่เพิ่งแก้ล่าสุด
-- ApiClient refresh token ดูเหมือนทำงานถูกแล้ว:
-  - request check-in ครั้งแรกอาจได้ 401 เพราะ access token หมดอายุ
-  - ApiClient เรียก /auth/refresh
-  - จากนั้น retry request check-in เดิมอีกครั้ง
-- Backend check-in เพิ่มการกัน check-in ซ้ำแล้ว:
-  - ถ้าพนักงาน check-in วันนี้ไปแล้ว backend จะตอบ 409 พร้อม message "Already checked in today"
-- Backend check-in ถ้าเกิด 500 จะส่ง "error": err.Error() กลับมาด้วย เพื่อ debug สาเหตุจริงจาก database
-- Flutter แยก loading state แล้ว:
-  - TodayAttendanceLoading
-  - CheckInLoading
-  เพื่อไม่ให้ปุ่ม Check-in ขึ้น "Checking in..." ตอนที่แค่กำลังโหลดข้อมูล attendance วันนี้
+2. ใช้ location จริงจากมือถือ
+   - ตอนนี้ยังใช้พิกัด mock
+   - เพิ่ม geolocator, ขอ permission, ส่ง lat/lng จริงตอน check-in
 
-ไฟล์ที่เกี่ยวข้องล่าสุด
-- backend/internal/modules/attendance/handler.go
-- backend/internal/modules/attendance/route.go
-- app/lib/features/attendance/data/datasources/attendance_remote_datasource.dart
-- app/lib/features/attendance/domain/models/today_attendance.dart
-- app/lib/features/attendance/presentation/bloc/attendance_bloc.dart
-- app/lib/features/attendance/presentation/bloc/attendance_event.dart
-- app/lib/features/attendance/presentation/bloc/attendance_state.dart
-- app/lib/features/home/presentation/pages/home_page.dart
-- app/lib/features/office_location/data/datasources/office_location_remote_datasource.dart
-- app/lib/features/office_location/domain/models/office_location.dart
-- app/lib/core/constants/api_constants.dart
-- app/lib/main.dart
+3. เชื่อมหน้า History กับ backend
+   - ใช้ GET /api/attendances/history
+   - แทน mock data ใน history_page.dart
 
-สิ่งที่ควรทำต่อ
-1. ทดสอบ check-in แบบ end-to-end บนแอปจริง
-   - ถ้า backend ตอบ 500 ให้ดู field "error" ที่ backend ส่งกลับมา
-   - สาเหตุที่เป็นไปได้:
-     - database constraint
-     - column ไม่ตรงกับ schema
-     - foreign key error
-     - duplicate attendance
-     - schema ใน database ไม่ตรงกับโค้ดล่าสุด
+4. ปรับ Today card ให้ครบ
+   - Working time ยังเป็น "-"
+   - Office distance ควรใช้ distance_meters จาก backend
 
-2. ปิดปุ่ม Check-in เมื่อวันนี้ check-in แล้ว
-   - ถ้า state เป็น TodayAttendanceLoaded และ attendance != null
-   - ปุ่มควร disabled หรือเปลี่ยนข้อความเป็น "Checked in"
-   - จะช่วยกันผู้ใช้กดซ้ำ และลดการยิง API ที่จะได้ 409
+5. เก็บ flutter analyze ที่เหลือ
+   - ลบหรือ rename home_page copy.dart
+   - แก้ withOpacity ใน app_button.dart
+   - แก้ widget_test.dart ที่ยังเรียก MyApp
 
-3. ใช้ location จริงจากมือถือ
-   - ตอนนี้แอปยังส่งพิกัด mock:
-     - latitude: 13.7563
-     - longitude: 100.5018
-   - ควรเพิ่ม package เช่น geolocator
-   - ขอ permission location
-   - handle กรณีผู้ใช้ไม่อนุญาต หรือปิด GPS
-   - ส่ง latitude/longitude จริงเข้า CheckInRequested
+6. ทำ database constraint กัน check-in ซ้ำ
+   - เพิ่ม UNIQUE(employee_id, attendance_date)
+   - ถ้าชน constraint ให้ backend ตอบ 409
 
-4. เชื่อมหน้า History กับ backend
-   - Backend มี route แล้ว: GET /api/attendances/history
-   - ต้องสร้าง model สำหรับ attendance history item
-   - เพิ่ม method getAttendanceHistory() ใน datasource
-   - เพิ่ม Bloc event/state หรือแยกเป็น HistoryBloc
-   - แทน mock data ใน app/lib/features/history/presentation/pages/history_page.dart
-
-5. ปรับข้อมูลในการ์ด Today Attendance ให้สมบูรณ์ขึ้น
-   - Working time ตอนนี้ยังเป็น "-"
-   - ใช้ checkInTime จาก TodayAttendance แล้วคำนวณเวลาทำงานจาก DateTime.now()
-   - อาจใช้ timer refresh ทุก 1 นาที
-   - Office distance ตอนนี้ยังดูเป็นค่าคงที่ ควรผูกกับ distance_meters จาก today attendance
-
-6. เก็บงาน flutter analyze ที่เหลือ
-   ปัญหาที่รู้แล้ว:
-   - app/lib/features/home/presentation/pages/home_page copy.dart ผิด lint file_names
-     - ถ้าเป็นไฟล์ backup ให้ลบ
-     - ถ้ายังใช้ ให้ rename ให้เป็น lower_case_with_underscores
-   - app/lib/shared/widgets/app_button.dart ใช้ withOpacity ที่ deprecated
-     - เปลี่ยนเป็น withValues(alpha: ...)
-   - app/test/widget_test.dart ยังอ้าง MyApp
-     - เปลี่ยนเป็น EmployeeAttendanceApp หรือเขียน test ใหม่
-
-7. ทำให้ backend schema แข็งแรงขึ้น
-   - เพิ่ม unique constraint กัน check-in ซ้ำระดับ database:
-     UNIQUE(employee_id, attendance_date)
-   - ยังควรเก็บ application-level duplicate guard ไว้เหมือนเดิม
-   - ถ้า database unique violation เกิดขึ้น ควรตอบ 409 แทน 500
-
-8. ปรับ response ของ backend ให้ consistent
-   - /attendances/today ส่ง data: null ถ้ายังไม่ได้ check-in ซึ่งโอเคแล้ว
-   - /attendances/check-in อาจปรับให้ส่ง response shape เหมือน today/history เพื่อให้ Flutter ใช้ model เดียวกันได้ง่ายขึ้น
-
-คำสั่งที่มีประโยชน์
-- ทดสอบ Backend:
-  cd backend
-  go test ./...
-
-- ตรวจ Flutter:
-  cd app
-  flutter analyze
-
-Commit message ที่แนะนำ
-- ถ้าจะ commit งาน fix ล่าสุด:
-  Fix attendance check-in loading and duplicate handling
-
-- ถ้าทำปิดปุ่มหลัง check-in แล้ว:
-  Disable check-in after today attendance exists
-
-- ถ้าเพิ่ม location จริงจากมือถือแล้ว:
-  Use device location for attendance check-in
+7. ทดสอบ weather icon บนหน้า Home
+   - ตอนนี้ดึง weather ระยองจาก Open-Meteo
+   - icon เปลี่ยนตามแดด/ฝน/พายุ
