@@ -1,6 +1,10 @@
 import 'package:app/core/network/api_client.dart';
 import 'package:app/core/theme/app_colors.dart';
 import 'package:app/features/attendance/data/datasources/attendance_remote_datasource.dart';
+import 'package:app/features/attendance/presentation/bloc/attendance_bloc.dart';
+import 'package:app/features/attendance/presentation/bloc/attendance_event.dart';
+import 'package:app/features/attendance/presentation/bloc/attendance_state.dart';
+import 'package:app/features/office_location/data/datasources/office_location_remote_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -188,31 +192,34 @@ class _TodayCard extends StatefulWidget {
 }
 
 class _TodayCardState extends State<_TodayCard> {
-  bool _isSubmitting = false;
-
   Future<void> _checkIn() async {
-    if (_isSubmitting) return;
-
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    final ds = AttendanceRemoteDatasource(apiClient: context.read<ApiClient>());
+    final officeLocationDs = context.read<OfficeLocationRemoteDatasource>();
 
     try {
-      await ds.checkIn(
-        officeLocationId: 1,
-        checkInLatitude: 13.7563,
-        checkInLongitude: 100.5018,
-        note: '',
+      final officeLocations = await officeLocationDs.getOfficeLocations();
+
+      if (officeLocations.isEmpty) {
+        throw Exception('No office locations available');
+      }
+
+      final officeLocation = officeLocations.first;
+
+      if (!mounted) return;
+
+      context.read<AttendanceBloc>().add(
+        CheckInRequested(
+          officeLocationId: officeLocation.id,
+          checkInLatitude: 13.7563,
+          checkInLongitude: 100.5018,
+          note: '',
+        ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Check-in failed: $e')));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not load office location: $e')),
+      );
     }
   }
 
@@ -305,27 +312,45 @@ class _TodayCardState extends State<_TodayCard> {
             const SizedBox(height: 10),
             const _LocationStrip(),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _checkIn,
-                style: ElevatedButton.styleFrom(
-                  elevation: 0,
-                  backgroundColor: AppColors.danger,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            BlocConsumer<AttendanceBloc, AttendanceState>(
+              listener: (context, state) {
+                if (state is AttendanceSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Check-in successful')),
+                  );
+                }
+
+                if (state is AttendanceFailure) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(state.message)));
+                }
+              },
+              builder: (context, state) {
+                final isLoading = state is AttendanceLoading;
+                return SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : _checkIn,
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0,
+                      backgroundColor: AppColors.danger,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      isLoading ? 'Checking in...' : 'Check-in',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  _isSubmitting ? 'Checking in...' : 'Check-in',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),

@@ -25,6 +25,8 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         checkInLongitude: event.checkInLongitude,
         note: event.note,
       );
+
+      emit(AttendanceSuccess());
     } on DioException catch (e) {
       emit(
         AttendanceFailure(

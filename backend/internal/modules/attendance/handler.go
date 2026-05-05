@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/jackc/pgx/v5"
 )
 
 type CreateAttendanceRequest struct {
@@ -15,6 +16,19 @@ type CreateAttendanceRequest struct {
 	CheckInLatitude  float64 `json:"check_in_latitude"`
 	CheckInLongitude float64 `json:"check_in_longitude"`
 	Note             string  `json:"note"`
+}
+
+type AttendanceResponse struct {
+	ID                 int64     `json:"id"`
+	EmployeeID         int64     `json:"employee_id"`
+	OfficeLocationID   int64     `json:"office_location_id"`
+	OfficeLocationName string    `json:"office_location_name"`
+	AttendanceDate     time.Time `json:"attendance_date"`
+	CheckInTime        time.Time `json:"check_in_time"`
+	CheckInLatitude    float64   `json:"check_in_latitude"`
+	CheckInLongitude   float64   `json:"check_in_longitude"`
+	DistanceMeters     float64   `json:"distance_meters"`
+	Note               string    `json:"note"`
 }
 
 func CreateAttendance(c fiber.Ctx) error {
@@ -140,6 +154,172 @@ func CreateAttendance(c fiber.Ctx) error {
 			"note":               body.Note,
 		},
 	})
+}
+
+func GetTodayAttendance(c fiber.Ctx) error {
+	employeeID, err := getEmployeeIDFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var result AttendanceResponse
+
+	err = config.DB.QueryRow(
+		ctx,
+		`SELECT
+			a.id,
+			a.employee_id,
+			a.office_location_id,
+			o.name,
+			a.attendance_date,
+			a.check_in_time,
+			a.check_in_latitude,
+			a.check_in_longitude,
+			a.distance_meters,
+			COALESCE(a.note, '')
+		FROM attendances a
+		JOIN office_locations o ON o.id = a.office_location_id
+		WHERE a.employee_id = $1
+			AND a.attendance_date = CURRENT_DATE
+		ORDER BY a.check_in_time DESC
+		LIMIT 1`,
+		employeeID,
+	).Scan(
+		&result.ID,
+		&result.EmployeeID,
+		&result.OfficeLocationID,
+		&result.OfficeLocationName,
+		&result.AttendanceDate,
+		&result.CheckInTime,
+		&result.CheckInLatitude,
+		&result.CheckInLongitude,
+		&result.DistanceMeters,
+		&result.Note,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return c.JSON(fiber.Map{
+				"message": "No attendance record found for today",
+				"data":    nil,
+			})
+		}
+
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Could not fetch today's attendance",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Today's attendance fetched successfully",
+		"data":    result,
+	})
+}
+
+func GetAttendanceHistory(c fiber.Ctx) error {
+	employeeID, err := getEmployeeIDFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	rows, err := config.DB.Query(
+		ctx,
+		`SELECT
+			a.id,
+			a.employee_id,
+			a.office_location_id,
+			o.name,
+			a.attendance_date,
+			a.check_in_time,
+			a.check_in_latitude,
+			a.check_in_longitude,
+			a.distance_meters,
+			COALESCE(a.note, '')
+		FROM attendances a
+		JOIN office_locations o ON o.id = a.office_location_id
+		WHERE a.employee_id = $1
+		ORDER BY a.attendance_date DESC, a.check_in_time DESC
+		LIMIT 30`,
+		employeeID,
+	)
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Could not fetch attendance history",
+		})
+	}
+
+	defer rows.Close()
+
+	results := make([]AttendanceResponse, 0)
+
+	for rows.Next() {
+		var result AttendanceResponse
+
+		if err := rows.Scan(
+			&result.ID,
+			&result.EmployeeID,
+			&result.OfficeLocationID,
+			&result.OfficeLocationName,
+			&result.AttendanceDate,
+			&result.CheckInTime,
+			&result.CheckInLatitude,
+			&result.CheckInLongitude,
+			&result.DistanceMeters,
+			&result.Note,
+		); err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"message": "Could not scan attendance history",
+			})
+		}
+
+		results = append(results, result)
+	}
+
+	if err := rows.Err(); err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Error during attendance history iteration",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Attendance history fetched successfully",
+		"data":    results,
+	})
+}
+
+func getEmployeeIDFromToken(c fiber.Ctx) (int64, error) {
+	userID, ok := c.Locals("user_id").(int64)
+	if !ok {
+		return 0, c.Status(401).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var employeeID int64
+
+	err := config.DB.QueryRow(
+		ctx,
+		`SELECT id FROM employees WHERE user_id = $1`,
+		userID,
+	).Scan(&employeeID)
+
+	if err != nil {
+		return 0, c.Status(404).JSON(fiber.Map{
+			"message": "Employee profile not found",
+		})
+	}
+
+	return employeeID, nil
 }
 
 func haversineMeters(lat1, lon1, lat2, lon2 float64) float64 {
