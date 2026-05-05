@@ -17,7 +17,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     CheckInRequested event,
     Emitter<AttendanceState> emit,
   ) async {
-    emit(AttendanceLoading());
+    emit(CheckInLoading());
 
     try {
       await attendanceRemoteDatasource.checkIn(
@@ -30,9 +30,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       emit(AttendanceSuccess());
     } on DioException catch (e) {
       emit(
-        AttendanceFailure(
-          message: e.response?.data['message'] ?? 'Check-in failed',
-        ),
+        AttendanceFailure(message: _dioMessage(e, fallback: 'Check-in failed')),
       );
     } catch (_) {
       emit(AttendanceFailure(message: 'An error occurred during check-in'));
@@ -43,7 +41,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     TodayAttendanceRequested event,
     Emitter<AttendanceState> emit,
   ) async {
-    emit(AttendanceLoading());
+    emit(TodayAttendanceLoading());
 
     try {
       final attendance = await attendanceRemoteDatasource.getTodayAttendance();
@@ -52,12 +50,21 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     } on DioException catch (e) {
       emit(
         AttendanceFailure(
-          message:
-              e.response?.data['message'] ?? 'Could not load today attendance',
+          message: _dioMessage(e, fallback: 'Could not load today attendance'),
         ),
       );
     } catch (_) {
       emit(AttendanceFailure(message: 'Could not load today attendance'));
     }
+  }
+
+  String _dioMessage(DioException e, {required String fallback}) {
+    final data = e.response?.data;
+
+    if (data is Map) {
+      return data['message']?.toString() ?? fallback;
+    }
+
+    return fallback;
   }
 }

@@ -78,6 +78,30 @@ func CreateAttendance(c fiber.Ctx) error {
 		})
 	}
 
+	var existingAttendanceID int64
+	err = config.DB.QueryRow(
+		ctx,
+		`SELECT id
+		FROM attendances
+		WHERE employee_id = $1
+			AND attendance_date = CURRENT_DATE
+		LIMIT 1`,
+		employeeID,
+	).Scan(&existingAttendanceID)
+
+	if err == nil {
+		return c.Status(409).JSON(fiber.Map{
+			"message": "Already checked in today",
+		})
+	}
+
+	if err != pgx.ErrNoRows {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Could not check existing attendance",
+			"error":   err.Error(),
+		})
+	}
+
 	var officeID int64
 	var officeLatitude float64
 	var officeLongitude float64
@@ -137,6 +161,7 @@ func CreateAttendance(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Could not create attendance",
+			"error":   err.Error(),
 		})
 	}
 

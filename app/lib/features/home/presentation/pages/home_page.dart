@@ -1,4 +1,5 @@
 import 'package:app/core/theme/app_colors.dart';
+import 'package:app/features/attendance/domain/models/today_attendance.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_event.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_state.dart';
@@ -191,6 +192,8 @@ class _TodayCard extends StatefulWidget {
 }
 
 class _TodayCardState extends State<_TodayCard> {
+  TodayAttendance? _todayAttendance;
+
   @override
   void initState() {
     super.initState();
@@ -231,6 +234,11 @@ class _TodayCardState extends State<_TodayCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isCheckedIn = _todayAttendance != null;
+    final checkInText = _todayAttendance == null
+        ? '-'
+        : DateFormat('HH:mm').format(_todayAttendance!.checkInTime);
+
     return Transform.translate(
       offset: const Offset(0, -46),
       child: _DashboardCard(
@@ -241,7 +249,7 @@ class _TodayCardState extends State<_TodayCard> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -254,7 +262,7 @@ class _TodayCardState extends State<_TodayCard> {
                         ),
                       ),
                       SizedBox(height: 6),
-                      _StatusPill(),
+                      _StatusPill(isCheckedIn: isCheckedIn),
                     ],
                   ),
                 ),
@@ -296,36 +304,24 @@ class _TodayCardState extends State<_TodayCard> {
               ],
             ),
             const SizedBox(height: 18),
-            BlocBuilder<AttendanceBloc, AttendanceState>(
-              builder: (context, state) {
-                final todayAttendance = state is TodayAttendanceLoaded
-                    ? state.attendance
-                    : null;
-
-                final checkInText = todayAttendance == null
-                    ? '-'
-                    : DateFormat('HH:mm').format(todayAttendance.checkInTime);
-
-                return Row(
-                  children: [
-                    Expanded(
-                      child: _MetricTile(
-                        icon: Icons.login_rounded,
-                        label: 'Check-in',
-                        value: checkInText,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: _MetricTile(
-                        icon: Icons.timer_outlined,
-                        label: 'Working',
-                        value: '-',
-                      ),
-                    ),
-                  ],
-                );
-              },
+            Row(
+              children: [
+                Expanded(
+                  child: _MetricTile(
+                    icon: Icons.login_rounded,
+                    label: 'Check-in',
+                    value: checkInText,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: _MetricTile(
+                    icon: Icons.timer_outlined,
+                    label: 'Working',
+                    value: '-',
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 10),
@@ -333,6 +329,12 @@ class _TodayCardState extends State<_TodayCard> {
             const SizedBox(height: 16),
             BlocConsumer<AttendanceBloc, AttendanceState>(
               listener: (context, state) {
+                if (state is TodayAttendanceLoaded) {
+                  setState(() {
+                    _todayAttendance = state.attendance;
+                  });
+                }
+
                 if (state is AttendanceSuccess) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Check-in successful')),
@@ -347,21 +349,25 @@ class _TodayCardState extends State<_TodayCard> {
                   ScaffoldMessenger.of(
                     context,
                   ).showSnackBar(SnackBar(content: Text(state.message)));
+
+                  if (state.message == 'Already checked in today') {
+                    context.read<AttendanceBloc>().add(
+                      TodayAttendanceRequested(),
+                    );
+                  }
                 }
               },
               builder: (context, state) {
-                final isLoading = state is AttendanceLoading;
-                final todayAttendance = state is TodayAttendanceLoaded
-                    ? state.attendance
-                    : null;
-                final checkInText = todayAttendance == null
-                    ? '-'
-                    : DateFormat('HH:mm').format(todayAttendance.checkInTime);
+                final isLoading = state is CheckInLoading;
+                final isAlreadyCheckedIn = _todayAttendance != null;
+
                 return SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: isLoading ? null : _checkIn,
+                    onPressed: isLoading || isAlreadyCheckedIn
+                        ? null
+                        : _checkIn,
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
                       backgroundColor: AppColors.danger,
@@ -371,7 +377,11 @@ class _TodayCardState extends State<_TodayCard> {
                       ),
                     ),
                     child: Text(
-                      isLoading ? 'Checking in...' : 'Check-in',
+                      isAlreadyCheckedIn
+                          ? 'Checked in'
+                          : isLoading
+                          ? 'Checking in...'
+                          : 'Check-in',
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w900,
@@ -389,25 +399,31 @@ class _TodayCardState extends State<_TodayCard> {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill();
+  final bool isCheckedIn;
+
+  const _StatusPill({required this.isCheckedIn});
 
   @override
   Widget build(BuildContext context) {
+    final color = isCheckedIn ? AppColors.success : AppColors.grey;
+    final icon = isCheckedIn ? Icons.verified_rounded : Icons.schedule_rounded;
+    final text = isCheckedIn ? 'Checked in' : 'Not checked in';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.verified_rounded, color: AppColors.success, size: 14),
-          SizedBox(width: 6),
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 6),
           Text(
-            'Checked in',
+            text,
             style: TextStyle(
-              color: AppColors.success,
+              color: color,
               fontSize: 12,
               fontWeight: FontWeight.w800,
             ),
