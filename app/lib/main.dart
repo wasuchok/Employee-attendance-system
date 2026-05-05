@@ -8,6 +8,7 @@ import 'package:app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:app/features/character/data/datasources/character_remote_datasource.dart';
 import 'package:app/features/character/presentation/bloc/character_bloc.dart';
 import 'package:app/features/office_location/data/datasources/office_location_remote_datasource.dart';
+import 'package:app/features/weather/data/datasources/weather_remote_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:app/features/attendance/data/datasources/attendance_remote_datasource.dart';
@@ -72,6 +73,7 @@ class _EmployeeAttendanceAppState extends State<EmployeeAttendanceApp> {
             apiClient: context.read<ApiClient>(),
           ),
         ),
+        Provider(create: (context) => WeatherRemoteDatasource()),
       ],
 
       child: ChangeNotifierProvider.value(

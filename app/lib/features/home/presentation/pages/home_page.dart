@@ -4,6 +4,8 @@ import 'package:app/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_event.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_state.dart';
 import 'package:app/features/office_location/data/datasources/office_location_remote_datasource.dart';
+import 'package:app/features/weather/data/datasources/weather_remote_datasource.dart';
+import 'package:app/features/weather/domain/models/rayong_weather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -46,101 +48,118 @@ class _HomeView extends StatelessWidget {
   }
 }
 
-class _HeroHeader extends StatelessWidget {
+class _HeroHeader extends StatefulWidget {
   const _HeroHeader();
 
   @override
+  State<_HeroHeader> createState() => _HeroHeaderState();
+}
+
+class _HeroHeaderState extends State<_HeroHeader> {
+  late final Future<RayongWeather> _weatherFuture;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _weatherFuture = context.read<WeatherRemoteDatasource>().getRayongWeather();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF0D5BE1), Color(0xFF0647B9)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          const Positioned(
-            left: 28,
-            top: 92,
-            child: _CloudIcon(size: 74, opacity: 0.16),
-          ),
-          const Positioned(
-            right: 26,
-            top: 128,
-            child: _CloudIcon(size: 94, opacity: 0.14),
-          ),
-          const Positioned(
-            right: 82,
-            top: 48,
-            child: _CloudIcon(size: 48, opacity: 0.1),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 54, 20, 72),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Employee Attendance',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    _HeaderIconButton(
-                      icon: Icons.notifications_none_rounded,
-                      onPressed: () {},
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  'Good morning,',
-                  style: TextStyle(
-                    color: Color(0xFFEAF6FF),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Wasuchok',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_today_outlined,
-                      color: Color(0xFFEAF6FF),
-                      size: 15,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Mon, 27 Apr 2026',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.94),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    return FutureBuilder<RayongWeather>(
+      future: _weatherFuture,
+      builder: (context, snapshot) {
+        final weatherIconPath =
+            snapshot.data?.assetPath ??
+            'lib/assets/image/weather/sun_behind_cloud_3d.png';
+
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF0D5BE1), Color(0xFF0647B9)],
             ),
           ),
-        ],
-      ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 12,
+                bottom: -8,
+                child: _CloudIcon(
+                  size: 156,
+                  opacity: 0.9,
+                  assetPath: weatherIconPath,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 54, 20, 72),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Employee Attendance',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        _HeaderIconButton(
+                          icon: Icons.notifications_none_rounded,
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    const Text(
+                      'Good morning,',
+                      style: TextStyle(
+                        color: Color(0xFFEAF6FF),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Wasuchok',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          color: Color(0xFFEAF6FF),
+                          size: 15,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Mon, 27 Apr 2026',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.94),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -171,15 +190,38 @@ class _HeaderIconButton extends StatelessWidget {
 class _CloudIcon extends StatelessWidget {
   final double size;
   final double opacity;
+  final String assetPath;
 
-  const _CloudIcon({required this.size, required this.opacity});
+  const _CloudIcon({
+    required this.size,
+    required this.opacity,
+    required this.assetPath,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
-      Icons.cloud,
-      size: size,
-      color: Colors.white.withValues(alpha: opacity),
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.22),
+              blurRadius: 34,
+              spreadRadius: 4,
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 26,
+              offset: const Offset(0, 14),
+            ),
+          ],
+        ),
+        child: Image.asset(assetPath, fit: BoxFit.contain),
+      ),
     );
   }
 }
