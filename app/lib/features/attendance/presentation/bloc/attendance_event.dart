@@ -13,3 +13,5 @@ class CheckInRequested extends AttendanceEvent {
     this.note,
   });
 }
+
+class TodayAttendanceRequested extends AttendanceEvent {}

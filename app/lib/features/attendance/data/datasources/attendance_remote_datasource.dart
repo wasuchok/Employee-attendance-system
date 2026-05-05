@@ -1,5 +1,6 @@
 import 'package:app/core/constants/api_constants.dart';
 import 'package:app/core/network/api_client.dart';
+import 'package:app/features/attendance/domain/models/today_attendance.dart';
 
 class AttendanceRemoteDatasource {
   final ApiClient apiClient;
@@ -21,5 +22,24 @@ class AttendanceRemoteDatasource {
         'note': note ?? '',
       },
     );
+  }
+
+  Future<TodayAttendance?> getTodayAttendance() async {
+    final response = await apiClient.get(ApiConstants.attendanceToday);
+
+    final data = response.data;
+    final attendanceData = data is Map ? data['data'] : null;
+
+    if (attendanceData == null) {
+      return null;
+    }
+
+    if (attendanceData is! Map) {
+      throw FormatException(
+        'Invalid today attendance response: ${response.data}',
+      );
+    }
+
+    return TodayAttendance.fromJson(Map<String, dynamic>.from(attendanceData));
   }
 }

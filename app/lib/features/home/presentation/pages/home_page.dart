@@ -1,12 +1,11 @@
-import 'package:app/core/network/api_client.dart';
 import 'package:app/core/theme/app_colors.dart';
-import 'package:app/features/attendance/data/datasources/attendance_remote_datasource.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_event.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_state.dart';
 import 'package:app/features/office_location/data/datasources/office_location_remote_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -192,6 +191,13 @@ class _TodayCard extends StatefulWidget {
 }
 
 class _TodayCardState extends State<_TodayCard> {
+  @override
+  void initState() {
+    super.initState();
+
+    context.read<AttendanceBloc>().add(TodayAttendanceRequested());
+  }
+
   Future<void> _checkIn() async {
     final officeLocationDs = context.read<OfficeLocationRemoteDatasource>();
 
@@ -290,25 +296,38 @@ class _TodayCardState extends State<_TodayCard> {
               ],
             ),
             const SizedBox(height: 18),
-            const Row(
-              children: [
-                Expanded(
-                  child: _MetricTile(
-                    icon: Icons.login_rounded,
-                    label: 'Check-in',
-                    value: '08:55',
-                  ),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: _MetricTile(
-                    icon: Icons.timer_outlined,
-                    label: 'Working',
-                    value: '3h 45m',
-                  ),
-                ),
-              ],
+            BlocBuilder<AttendanceBloc, AttendanceState>(
+              builder: (context, state) {
+                final todayAttendance = state is TodayAttendanceLoaded
+                    ? state.attendance
+                    : null;
+
+                final checkInText = todayAttendance == null
+                    ? '-'
+                    : DateFormat('HH:mm').format(todayAttendance.checkInTime);
+
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _MetricTile(
+                        icon: Icons.login_rounded,
+                        label: 'Check-in',
+                        value: checkInText,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: _MetricTile(
+                        icon: Icons.timer_outlined,
+                        label: 'Working',
+                        value: '-',
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
+
             const SizedBox(height: 10),
             const _LocationStrip(),
             const SizedBox(height: 16),
@@ -317,6 +336,10 @@ class _TodayCardState extends State<_TodayCard> {
                 if (state is AttendanceSuccess) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Check-in successful')),
+                  );
+
+                  context.read<AttendanceBloc>().add(
+                    TodayAttendanceRequested(),
                   );
                 }
 
@@ -328,6 +351,12 @@ class _TodayCardState extends State<_TodayCard> {
               },
               builder: (context, state) {
                 final isLoading = state is AttendanceLoading;
+                final todayAttendance = state is TodayAttendanceLoaded
+                    ? state.attendance
+                    : null;
+                final checkInText = todayAttendance == null
+                    ? '-'
+                    : DateFormat('HH:mm').format(todayAttendance.checkInTime);
                 return SizedBox(
                   width: double.infinity,
                   height: 48,

@@ -9,6 +9,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
 
   AttendanceBloc({required this.attendanceRemoteDatasource})
     : super(AttendanceInitial()) {
+    on<TodayAttendanceRequested>(_onTodayAttendanceRequested);
     on<CheckInRequested>(_onCheckIn);
   }
 
@@ -35,6 +36,28 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       );
     } catch (_) {
       emit(AttendanceFailure(message: 'An error occurred during check-in'));
+    }
+  }
+
+  Future<void> _onTodayAttendanceRequested(
+    TodayAttendanceRequested event,
+    Emitter<AttendanceState> emit,
+  ) async {
+    emit(AttendanceLoading());
+
+    try {
+      final attendance = await attendanceRemoteDatasource.getTodayAttendance();
+
+      emit(TodayAttendanceLoaded(attendance: attendance));
+    } on DioException catch (e) {
+      emit(
+        AttendanceFailure(
+          message:
+              e.response?.data['message'] ?? 'Could not load today attendance',
+        ),
+      );
+    } catch (_) {
+      emit(AttendanceFailure(message: 'Could not load today attendance'));
     }
   }
 }
