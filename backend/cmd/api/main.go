@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend/config"
+	"backend/internal/modules/attendance"
 	"backend/internal/modules/auth"
 	"backend/internal/modules/employee"
 	"backend/internal/modules/officelocation"
@@ -42,6 +43,7 @@ func main() {
 	auth.RegisterRoutes(app)
 	employee.RegisterEmployeeRoutes(app)
 	officelocation.RegisterOfficeLocationRoutes(app)
+	attendance.RegisterAttendanceRoutes(app)
 
 	port := os.Getenv("PORT")
 

@@ -17,7 +17,7 @@ class AttendanceRemoteDatasource {
       data: {
         'office_location_id': officeLocationId,
         'check_in_latitude': checkInLatitude,
-        'check_in_longtitude': checkInLongitude,
+        'check_in_longitude': checkInLongitude,
         'note': note ?? '',
       },
     );
