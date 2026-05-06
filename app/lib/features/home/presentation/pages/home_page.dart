@@ -9,6 +9,7 @@ import 'package:app/features/weather/domain/models/rayong_weather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -67,6 +68,14 @@ class _HeroHeaderState extends State<_HeroHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+      final greeting = now.hour < 12
+      ? 'Good morning,'
+      : now.hour < 17
+      ? 'Good afternoon,'
+      : 'Good evening,';
+  final todayText = DateFormat('EEE, d MMM yyyy').format(now);
+ 
     return FutureBuilder<RayongWeather>(
       future: _weatherFuture,
       builder: (context, snapshot) {
@@ -117,8 +126,8 @@ class _HeroHeaderState extends State<_HeroHeader> {
                       ],
                     ),
                     const SizedBox(height: 18),
-                    const Text(
-                      'Good morning,',
+                     Text(
+                      greeting,
                       style: TextStyle(
                         color: Color(0xFFEAF6FF),
                         fontSize: 14,
@@ -144,13 +153,13 @@ class _HeroHeaderState extends State<_HeroHeader> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Mon, 27 Apr 2026',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.94),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+  todayText,
+  style: TextStyle(
+    color: Colors.white.withValues(alpha: 0.94),
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+  ),
+),
                       ],
                     ),
                   ],
@@ -236,6 +245,33 @@ class _TodayCard extends StatefulWidget {
 class _TodayCardState extends State<_TodayCard> {
   TodayAttendance? _todayAttendance;
 
+  Future<Position> _getCurrentPosition() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+  throw Exception('Location services are disabled');
+}
+    
+  var permission = await Geolocator.checkPermission();
+ 
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+  }
+ 
+  if (permission == LocationPermission.denied) {
+    throw Exception('Location permission denied');
+  }
+ 
+  if (permission == LocationPermission.deniedForever) {
+    throw Exception('Location permission permanently denied');
+  }
+ 
+  return Geolocator.getCurrentPosition(
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.high,
+    ),
+  );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -243,12 +279,29 @@ class _TodayCardState extends State<_TodayCard> {
     context.read<AttendanceBloc>().add(TodayAttendanceRequested());
   }
 
+  String _formatWorkingTime(DateTime checkInTime) {
+    final duration = DateTime.now().difference(checkInTime);
+
+    if(duration.inMinutes < 1) {
+      return '0m';
+    }
+
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+
+    if(hours == 0) {
+      return '${minutes}m';
+    }
+    
+    return '${hours}h ${minutes}m';
+  }
+
   Future<void> _checkIn() async {
     final officeLocationDs = context.read<OfficeLocationRemoteDatasource>();
 
     try {
       final officeLocations = await officeLocationDs.getOfficeLocations();
-
+final position = await _getCurrentPosition();
       if (officeLocations.isEmpty) {
         throw Exception('No office locations available');
       }
@@ -260,8 +313,8 @@ class _TodayCardState extends State<_TodayCard> {
       context.read<AttendanceBloc>().add(
         CheckInRequested(
           officeLocationId: officeLocation.id,
-          checkInLatitude: 13.7563,
-          checkInLongitude: 100.5018,
+checkInLatitude: position.latitude,
+checkInLongitude: position.longitude,
           note: '',
         ),
       );
@@ -280,6 +333,9 @@ class _TodayCardState extends State<_TodayCard> {
     final checkInText = _todayAttendance == null
         ? '-'
         : DateFormat('HH:mm').format(_todayAttendance!.checkInTime);
+    final workingText = _todayAttendance == null ? '-' : _formatWorkingTime(_todayAttendance!.checkInTime);
+    final distanceText = _todayAttendance == null ? '-' : '${_todayAttendance!.distanceMeters.round()} m';
+
 
     return Transform.translate(
       offset: const Offset(0, -46),
@@ -356,18 +412,18 @@ class _TodayCardState extends State<_TodayCard> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: _MetricTile(
                     icon: Icons.timer_outlined,
                     label: 'Working',
-                    value: '-',
+                    value: workingText,
                   ),
                 ),
               ],
             ),
 
             const SizedBox(height: 10),
-            const _LocationStrip(),
+          _LocationStrip(distanceText: distanceText),
             const SizedBox(height: 16),
             BlocConsumer<AttendanceBloc, AttendanceState>(
               listener: (context, state) {
@@ -543,7 +599,9 @@ class _MetricTile extends StatelessWidget {
 }
 
 class _LocationStrip extends StatelessWidget {
-  const _LocationStrip();
+  final String distanceText;
+
+  const _LocationStrip({required this.distanceText});
 
   @override
   Widget build(BuildContext context) {
@@ -553,7 +611,7 @@ class _LocationStrip extends StatelessWidget {
         color: AppColors.primary.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(Icons.place_outlined, color: AppColors.primary, size: 18),
           SizedBox(width: 10),
@@ -568,7 +626,7 @@ class _LocationStrip extends StatelessWidget {
             ),
           ),
           Text(
-            '80 m',
+            distanceText,
             style: TextStyle(
               color: AppColors.black,
               fontSize: 14,
