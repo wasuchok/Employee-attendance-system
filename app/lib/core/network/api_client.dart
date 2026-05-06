@@ -62,9 +62,13 @@ class ApiClient {
               requestOptions.headers['Authorization'] =
                   'Bearer $newAccessToken';
 
-              final response = await dio.fetch(requestOptions);
+              final response = await refreshDio.fetch(requestOptions);
               return handler.resolve(response);
-            } catch (_) {
+            } catch (retryError) {
+              if (retryError is DioException) {
+                return handler.reject(retryError);
+              }
+
               await tokenStorage.clearTokens();
               return handler.reject(error);
             }

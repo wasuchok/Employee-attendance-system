@@ -244,6 +244,7 @@ class _TodayCard extends StatefulWidget {
 
 class _TodayCardState extends State<_TodayCard> {
   TodayAttendance? _todayAttendance;
+  bool _isCheckingIn = false;
 
   Future<Position> _getCurrentPosition() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -299,6 +300,10 @@ class _TodayCardState extends State<_TodayCard> {
   Future<void> _checkIn() async {
     final officeLocationDs = context.read<OfficeLocationRemoteDatasource>();
 
+    setState(() {
+      _isCheckingIn = true;
+    });
+
     try {
       final officeLocations = await officeLocationDs.getOfficeLocations();
 final position = await _getCurrentPosition();
@@ -320,6 +325,10 @@ checkInLongitude: position.longitude,
       );
     } catch (e) {
       if (!mounted) return;
+
+      setState(() {
+        _isCheckingIn = false;
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not load office location: $e')),
@@ -427,6 +436,12 @@ checkInLongitude: position.longitude,
             const SizedBox(height: 16),
             BlocConsumer<AttendanceBloc, AttendanceState>(
               listener: (context, state) {
+                if (state is! CheckInLoading && _isCheckingIn) {
+                  setState(() {
+                    _isCheckingIn = false;
+                  });
+                }
+
                 if (state is TodayAttendanceLoaded) {
                   setState(() {
                     _todayAttendance = state.attendance;
@@ -456,7 +471,7 @@ checkInLongitude: position.longitude,
                 }
               },
               builder: (context, state) {
-                final isLoading = state is CheckInLoading;
+                final isLoading = _isCheckingIn;
                 final isAlreadyCheckedIn = _todayAttendance != null;
 
                 return SizedBox(

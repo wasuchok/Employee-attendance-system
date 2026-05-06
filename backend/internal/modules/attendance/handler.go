@@ -3,6 +3,7 @@ package attendance
 import (
 	"backend/config"
 	"context"
+	"log"
 	"math"
 	"strings"
 	"time"
@@ -18,6 +19,11 @@ type CreateAttendanceRequest struct {
 	Note             string  `json:"note"`
 }
 
+type CheckOutAttendanceRequest struct {
+	CheckOutLatitude  float64 `json:"check_out_latitude"`
+	CheckOutLongitude float64 `json:"check_out_longitude"`
+}
+
 type AttendanceResponse struct {
 	ID                 int64     `json:"id"`
 	EmployeeID         int64     `json:"employee_id"`
@@ -29,6 +35,10 @@ type AttendanceResponse struct {
 	CheckInLongitude   float64   `json:"check_in_longitude"`
 	DistanceMeters     float64   `json:"distance_meters"`
 	Note               string    `json:"note"`
+	CheckOutTime      *time.Time `json:"check_out_time"`
+CheckOutLatitude  *float64   `json:"check_out_latitude"`
+CheckOutLongitude *float64   `json:"check_out_longitude"`
+WorkingMinutes   int64      `json:"working_minutes"`
 }
 
 func CreateAttendance(c fiber.Ctx) error {
@@ -128,8 +138,22 @@ func CreateAttendance(c fiber.Ctx) error {
 	)
 
 	if distanceMeters > allowedRadiusMeters {
+		log.Printf(
+			"attendance check-in rejected: employee_id=%d office_location_id=%d check_in_latitude=%.7f check_in_longitude=%.7f office_latitude=%.7f office_longitude=%.7f distance_meters=%.2f allowed_radius_meters=%.2f",
+			employeeID,
+			body.OfficeLocationID,
+			body.CheckInLatitude,
+			body.CheckInLongitude,
+			officeLatitude,
+			officeLongitude,
+			distanceMeters,
+			allowedRadiusMeters,
+		)
+
 		return c.Status(403).JSON(fiber.Map{
-			"message": "Check-in location is outside allowed radius",
+			"message":               "Check-in location is outside allowed radius",
+			"distance_meters":       distanceMeters,
+			"allowed_radius_meters": allowedRadiusMeters,
 		})
 	}
 
@@ -181,6 +205,90 @@ func CreateAttendance(c fiber.Ctx) error {
 	})
 }
 
+func CheckOutAttendance(c fiber.Ctx) error {
+	var body CheckOutAttendanceRequest
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"message" : "Invalid request body",
+		})
+	}
+
+	employeeID, err := getEmployeeIDFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	if body.CheckOutLatitude < -90 || body.CheckOutLatitude > 90 {
+		return c.Status(400).JSON(fiber.Map{
+			"message" : "Invalid check_out_latitude",
+		})
+	}
+
+	if body.CheckOutLongitude < -180 || body.CheckOutLongitude > 180 {
+		return c.Status(400).JSON(fiber.Map{
+			"message" : "Invalid check_out_longitude",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var id int64
+	var attendanceDate time.Time
+	var checkInTime time.Time
+	var checkOutTime time.Time
+	var workingMinutes int64
+
+	   err = config.DB.QueryRow(
+        ctx,
+        `UPDATE attendances
+        SET
+            check_out_time = NOW(),
+            check_out_latitude = $1,
+            check_out_longitude = $2,
+            working_minutes = FLOOR(EXTRACT(EPOCH FROM (NOW() - check_in_time)) / 60),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE employee_id = $3
+            AND attendance_date = CURRENT_DATE
+            AND check_out_time IS NULL
+        RETURNING id, attendance_date, check_in_time, check_out_time, working_minutes`,
+        body.CheckOutLatitude,
+        body.CheckOutLongitude,
+        employeeID,
+    ).Scan(&id, &attendanceDate, &checkInTime, &checkOutTime, &workingMinutes)
+
+	   if err != nil {
+        if err == pgx.ErrNoRows {
+            return c.Status(409).JSON(fiber.Map{
+                "message": "No active check-in found or already checked out",
+            })
+        }
+ 
+        return c.Status(500).JSON(fiber.Map{
+            "message": "Could not check out attendance",
+            "error":   err.Error(),
+        })
+    }
+
+	  return c.JSON(fiber.Map{
+        "message": "Checked out successfully",
+        "data": fiber.Map{
+            "id":                  id,
+            "employee_id":         employeeID,
+            "attendance_date":     attendanceDate,
+            "check_in_time":       checkInTime,
+            "check_out_time":      checkOutTime,
+            "check_out_latitude":  body.CheckOutLatitude,
+            "check_out_longitude": body.CheckOutLongitude,
+            "working_minutes":     workingMinutes,
+        },
+    })
+ 
+}
+
+
+
 func GetTodayAttendance(c fiber.Ctx) error {
 	employeeID, err := getEmployeeIDFromToken(c)
 	if err != nil {
@@ -203,7 +311,11 @@ func GetTodayAttendance(c fiber.Ctx) error {
 			a.check_in_time,
 			a.check_in_latitude,
 			a.check_in_longitude,
+			a.check_out_time,
+			a.check_out_latitude,
+			a.check_out_longitude,
 			a.distance_meters,
+			COALESCE(a.working_minutes, 0),
 			COALESCE(a.note, '')
 		FROM attendances a
 		JOIN office_locations o ON o.id = a.office_location_id
@@ -221,7 +333,11 @@ func GetTodayAttendance(c fiber.Ctx) error {
 		&result.CheckInTime,
 		&result.CheckInLatitude,
 		&result.CheckInLongitude,
+		&result.CheckOutTime,
+		&result.CheckOutLatitude,
+		&result.CheckOutLongitude,
 		&result.DistanceMeters,
+		&result.WorkingMinutes,
 		&result.Note,
 	)
 

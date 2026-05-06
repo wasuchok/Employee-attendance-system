@@ -62,9 +62,32 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     final data = e.response?.data;
 
     if (data is Map) {
-      return data['message']?.toString() ?? fallback;
+      final message = data['message']?.toString() ?? fallback;
+      final distanceMeters = data['distance_meters'];
+      final allowedRadiusMeters = data['allowed_radius_meters'];
+
+      if (distanceMeters != null && allowedRadiusMeters != null) {
+        final distance = _formatNumber(distanceMeters);
+        final radius = _formatNumber(allowedRadiusMeters);
+
+        return '$message (distance: ${distance}m, allowed: ${radius}m)';
+      }
+
+      return message;
     }
 
     return fallback;
+  }
+
+  String _formatNumber(dynamic value) {
+    final number = value is num
+        ? value.toDouble()
+        : double.tryParse(value.toString());
+
+    if (number == null) {
+      return value.toString();
+    }
+
+    return number.toStringAsFixed(0);
   }
 }
