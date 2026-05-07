@@ -9,6 +9,10 @@ class TodayAttendance {
   final double checkInLongitude;
   final double distanceMeters;
   final String note;
+  final DateTime? checkOutTime;
+  final double? checkOutLatitude;
+  final double? checkOutLongitude;
+  final int workingMinutes;
 
   const TodayAttendance({
     required this.id,
@@ -19,6 +23,10 @@ class TodayAttendance {
     required this.checkInTime,
     required this.checkInLatitude,
     required this.checkInLongitude,
+    this.checkOutTime,
+    this.checkOutLatitude,
+    this.checkOutLongitude,
+    this.workingMinutes = 0,
     required this.distanceMeters,
     required this.note,
   });
@@ -33,6 +41,10 @@ class TodayAttendance {
       checkInTime: _parseDateTime(json['check_in_time']),
       checkInLatitude: _parseDouble(json['check_in_latitude']),
       checkInLongitude: _parseDouble(json['check_in_longitude']),
+      checkOutTime: json['check_out_time'] != null ? _parseDateTime(json['check_out_time']) : null,
+      checkOutLatitude: json['check_out_latitude'] != null ? _parseDouble(json['check_out_latitude']) : null,
+      checkOutLongitude: json['check_out_longitude'] != null ? _parseDouble(json['check_out_longitude']) : null,
+      workingMinutes: _parseInt(json['working_minutes']),
       distanceMeters: _parseDouble(json['distance_meters']),
       note: json['note']?.toString() ?? '',
     );

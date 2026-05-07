@@ -24,6 +24,18 @@ class AttendanceRemoteDatasource {
     );
   }
 
+  Future<void> checkOut({
+    required int officeLocationId,
+    required double checkOutLatitude,
+    required double checkOutLongitude,
+  }) async {
+    await apiClient.post(ApiConstants.attendanceCheckOut, data : {
+      'office_location_id': officeLocationId,
+      'check_out_latitude': checkOutLatitude,
+      'check_out_longitude': checkOutLongitude,
+    });
+  }
+
   Future<TodayAttendance?> getTodayAttendance() async {
     final response = await apiClient.get(ApiConstants.attendanceToday);
 

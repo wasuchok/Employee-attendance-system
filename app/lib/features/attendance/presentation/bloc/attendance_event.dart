@@ -14,4 +14,16 @@ class CheckInRequested extends AttendanceEvent {
   });
 }
 
+class CheckOutRequested extends AttendanceEvent {
+  final int officeLocationId;
+  final double checkOutLatitude;
+  final double checkOutLongitude;
+
+  CheckOutRequested({
+    required this.officeLocationId,
+    required this.checkOutLatitude,
+    required this.checkOutLongitude,
+  });
+}
+
 class TodayAttendanceRequested extends AttendanceEvent {}

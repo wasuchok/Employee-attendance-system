@@ -245,6 +245,7 @@ class _TodayCard extends StatefulWidget {
 class _TodayCardState extends State<_TodayCard> {
   TodayAttendance? _todayAttendance;
   bool _isCheckingIn = false;
+  bool _isCheckingOut = false;
 
   Future<Position> _getCurrentPosition() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -336,14 +337,57 @@ checkInLongitude: position.longitude,
     }
   }
 
+  Future<void> _checkOut() async {
+    final officeLocationDs = context.read<OfficeLocationRemoteDatasource>();
+
+    setState(() {
+      _isCheckingOut = true;
+    });
+
+    try {
+    final officeLocations = await officeLocationDs.getOfficeLocations();
+    final position = await _getCurrentPosition();
+ 
+    if (officeLocations.isEmpty) {
+      throw Exception('No office locations available');
+    }
+ 
+    final officeLocation = officeLocations.first;
+ 
+    if (!mounted) return;
+ 
+    context.read<AttendanceBloc>().add(
+      CheckOutRequested(
+        officeLocationId: officeLocation.id,
+        checkOutLatitude: position.latitude,
+        checkOutLongitude: position.longitude,
+      ),
+    );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isCheckingOut = false;
+      });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Check-out failed: $e')),
+    );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isCheckedIn = _todayAttendance != null;
     final checkInText = _todayAttendance == null
         ? '-'
         : DateFormat('HH:mm').format(_todayAttendance!.checkInTime);
+    final checkOutText = _todayAttendance?.checkOutTime == null
+        ? '-'
+        : DateFormat('HH:mm').format(_todayAttendance!.checkOutTime!);
     final workingText = _todayAttendance == null ? '-' : _formatWorkingTime(_todayAttendance!.checkInTime);
     final distanceText = _todayAttendance == null ? '-' : '${_todayAttendance!.distanceMeters.round()} m';
+    final isCheckedOut = _todayAttendance?.checkOutTime != null;
 
 
     return Transform.translate(
@@ -388,24 +432,28 @@ checkInLongitude: position.longitude,
                         fit: BoxFit.contain,
                       ),
                     ),
-                    Positioned(
-                      right: -2,
-                      bottom: 2,
-                      child: Container(
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: AppColors.success,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                        ),
-                        child: const Icon(
-                          Icons.check_rounded,
-                          color: Colors.white,
-                          size: 14,
+                    if (isCheckedIn)
+                      Positioned(
+                        right: -2,
+                        bottom: 2,
+                        child: Opacity(
+                          opacity: isCheckedOut ? 1.0 : 0.5,
+                          child: Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                            ),
+                            child: const Icon(
+                              Icons.check_rounded,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ],
@@ -423,24 +471,47 @@ checkInLongitude: position.longitude,
                 const SizedBox(width: 10),
                 Expanded(
                   child: _MetricTile(
+                    icon: Icons.logout_rounded,
+                    label: 'Check-out',
+                    value: checkOutText,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _MetricTile(
                     icon: Icons.timer_outlined,
                     label: 'Working',
                     value: workingText,
                   ),
                 ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MetricTile(
+                    icon: Icons.place_outlined,
+                    label: 'Distance',
+                    value: distanceText,
+                  ),
+                ),
               ],
             ),
-
-            const SizedBox(height: 10),
-          _LocationStrip(distanceText: distanceText),
             const SizedBox(height: 16),
             BlocConsumer<AttendanceBloc, AttendanceState>(
               listener: (context, state) {
-                if (state is! CheckInLoading && _isCheckingIn) {
-                  setState(() {
-                    _isCheckingIn = false;
-                  });
-                }
+              if (state is! CheckInLoading && _isCheckingIn) {
+  setState(() {
+    _isCheckingIn = false;
+  });
+}
+ 
+if (state is! CheckOutLoading && _isCheckingOut) {
+  setState(() {
+    _isCheckingOut = false;
+  });
+}
 
                 if (state is TodayAttendanceLoaded) {
                   setState(() {
@@ -450,7 +521,7 @@ checkInLongitude: position.longitude,
 
                 if (state is AttendanceSuccess) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Check-in successful')),
+                 SnackBar(content: Text(_todayAttendance?.checkOutTime != null ? 'Check-out successful' : 'Check-in successful')),
                   );
 
                   context.read<AttendanceBloc>().add(
@@ -470,39 +541,76 @@ checkInLongitude: position.longitude,
                   }
                 }
               },
-              builder: (context, state) {
-                final isLoading = _isCheckingIn;
-                final isAlreadyCheckedIn = _todayAttendance != null;
+            builder: (context, state) {
+  final isCheckedOut = _todayAttendance?.checkOutTime != null;
 
-                return SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: isLoading || isAlreadyCheckedIn
-                        ? null
-                        : _checkIn,
-                    style: ElevatedButton.styleFrom(
-                      elevation: 0,
-                      backgroundColor: AppColors.danger,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      isAlreadyCheckedIn
-                          ? 'Checked in'
-                          : isLoading
-                          ? 'Checking in...'
-                          : 'Check-in',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                );
-              },
+  if (isCheckedIn && !isCheckedOut) {
+    // Show Check-out button
+    final isLoading = _isCheckingOut;
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : _checkOut,
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          backgroundColor: const Color(0xFF3B82F6),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Text(
+          isLoading ? 'Checking out...' : 'Check-out',
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+        ),
+      ),
+    );
+  }
+
+  if (isCheckedOut) {
+    // Already checked out
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: null,
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: const Text(
+          'Checked out',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+        ),
+      ),
+    );
+  }
+
+  // Show Check-in button
+  final isLoading = _isCheckingIn;
+  return SizedBox(
+    width: double.infinity,
+    height: 48,
+    child: ElevatedButton(
+      onPressed: isLoading ? null : _checkIn,
+      style: ElevatedButton.styleFrom(
+        elevation: 0,
+        backgroundColor: AppColors.danger,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: Text(
+        isLoading ? 'Checking in...' : 'Check-in',
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+      ),
+    ),
+  );
+},
             ),
           ],
         ),

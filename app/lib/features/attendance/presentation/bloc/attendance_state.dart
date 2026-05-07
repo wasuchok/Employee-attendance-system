@@ -10,6 +10,8 @@ class TodayAttendanceLoading extends AttendanceState {}
 
 class CheckInLoading extends AttendanceState {}
 
+class CheckOutLoading extends AttendanceState {}
+
 class AttendanceSuccess extends AttendanceState {}
 
 class AttendanceFailure extends AttendanceState {
