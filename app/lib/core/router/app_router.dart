@@ -77,18 +77,9 @@ GoRouter createAppRouter({required AuthSession authSession}) {
         },
         routes: [
           GoRoute(path: '/home', builder: (context, state) => const HomePage()),
-          GoRoute(
-            path: '/history',
-            builder: (context, state) => const HistoryPage(),
-          ),
-          GoRoute(
-            path: '/leave',
-            builder: (context, state) => const LeavePage(),
-          ),
-          GoRoute(
-            path: '/profile',
-            builder: (context, state) => const ProfilePage(),
-          ),
+          GoRoute(path: '/history', builder: (context, state) => const HistoryPage()),
+          GoRoute(path: '/leave', builder: (context, state) => const LeavePage()),
+          GoRoute(path: '/profile', builder: (context, state) => const ProfilePage()),
         ],
       ),
     ],

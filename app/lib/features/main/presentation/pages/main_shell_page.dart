@@ -8,37 +8,15 @@ class MainShellPage extends StatelessWidget {
   const MainShellPage({super.key, required this.child});
 
   static const _tabs = [
-    _BottomTab(
-      path: '/home',
-      label: 'Home',
-      icon: Icons.home_outlined,
-      activeIcon: Icons.home,
-    ),
-    _BottomTab(
-      path: '/history',
-      label: 'History',
-      icon: Icons.history_outlined,
-      activeIcon: Icons.history,
-    ),
-    _BottomTab(
-      path: '/leave',
-      label: 'Leave',
-      icon: Icons.event_available_outlined,
-      activeIcon: Icons.event_available,
-    ),
-    _BottomTab(
-      path: '/profile',
-      label: 'Profile',
-      icon: Icons.person_outline,
-      activeIcon: Icons.person,
-    ),
+    _BottomTab(path: '/home', label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home),
+    _BottomTab(path: '/history', label: 'History', icon: Icons.history_outlined, activeIcon: Icons.history),
+    _BottomTab(path: '/leave', label: 'Leave', icon: Icons.event_available_outlined, activeIcon: Icons.event_available),
+    _BottomTab(path: '/profile', label: 'Profile', icon: Icons.person_outline, activeIcon: Icons.person),
   ];
 
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
-
     final index = _tabs.indexWhere((tab) => location.startsWith(tab.path));
-
     return index < 0 ? 0 : index;
   }
 
@@ -49,22 +27,25 @@ class MainShellPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 24,
-              offset: const Offset(0, -8),
+      extendBody: false,
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+          child: Container(
+            height: 68,
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 28,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: List.generate(_tabs.length, (index) {
                 final tab = _tabs[index];
                 final isSelected = currentIndex == index;
@@ -72,50 +53,43 @@ class MainShellPage extends StatelessWidget {
                 return GestureDetector(
                   onTap: () => context.go(tab.path),
                   behavior: HitTestBehavior.opaque,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary.withValues(alpha: 0.1)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  child: SizedBox(
+                    width: 64,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, animation) {
-                            return ScaleTransition(
-                              scale: animation,
-                              child: child,
-                            );
-                          },
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 280),
+                          curve: Curves.easeOutCubic,
+                          width: isSelected ? 48 : 40,
+                          height: isSelected ? 32 : 28,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary.withValues(alpha: 0.12)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: Icon(
                             isSelected ? tab.activeIcon : tab.icon,
-                            key: ValueKey<bool>(isSelected),
                             color: isSelected
                                 ? AppColors.primary
-                                : AppColors.grey.withValues(alpha: 0.6),
-                            size: 24,
+                                : const Color(0xFFB0B8C9),
+                            size: isSelected ? 22 : 20,
                           ),
                         ),
-                        if (isSelected) ...[
-                          const SizedBox(width: 8),
-                          Text(
-                            tab.label,
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                            ),
+                        const SizedBox(height: 4),
+                        AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 200),
+                          style: TextStyle(
+                            color: isSelected
+                                ? AppColors.primary
+                                : const Color(0xFFB0B8C9),
+                            fontSize: 11,
+                            fontWeight:
+                                isSelected ? FontWeight.w800 : FontWeight.w600,
                           ),
-                        ],
+                          child: Text(tab.label),
+                        ),
                       ],
                     ),
                   ),
