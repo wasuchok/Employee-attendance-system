@@ -101,8 +101,8 @@ class _EmployeeAttendanceAppState extends State<EmployeeAttendanceApp> {
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
-              fontFamily: GoogleFonts.inter().fontFamily,
-              textTheme: GoogleFonts.interTextTheme(),
+              fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+              textTheme: GoogleFonts.plusJakartaSansTextTheme(),
             ),
             routerConfig: appRouter,
           ),

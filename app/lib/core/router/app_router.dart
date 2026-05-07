@@ -6,6 +6,7 @@ import 'package:app/features/history/presentation/pages/history_page.dart';
 import 'package:app/features/leave/presentation/pages/leave_page.dart';
 import 'package:app/features/main/presentation/pages/main_shell_page.dart';
 import 'package:app/features/profile/presentation/pages/profile_page.dart';
+import 'package:app/features/splash/presentation/pages/splash_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/features/auth/presentation/pages/login_page.dart';
@@ -58,8 +59,7 @@ GoRouter createAppRouter({required AuthSession authSession}) {
     routes: [
       GoRoute(
         path: '/splash',
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        builder: (context, state) => const SplashPage(),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(path: '/admin', builder: (context, state) => const AdminPage()),
