@@ -37,6 +37,17 @@ class RayongWeather {
     }
   }
 
+  String get lottieUrl {
+    switch (assetType) {
+      case WeatherAssetType.storm:
+        return 'https://assets2.lottiefiles.com/packages/lf20_uwR49r.json';
+      case WeatherAssetType.rainy:
+        return 'https://assets2.lottiefiles.com/packages/lf20_rpC16Y.json';
+      case WeatherAssetType.cloudy:
+        return 'https://assets2.lottiefiles.com/packages/lf20_KUFdS6.json';
+    }
+  }
+
   static int _parseInt(dynamic value) {
     if (value is int) return value;
     if (value is num) return value.toInt();

@@ -3,6 +3,7 @@ import 'package:app/features/attendance/domain/models/today_attendance.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_event.dart';
 import 'package:app/features/attendance/presentation/bloc/attendance_state.dart';
+import 'package:app/features/character/data/datasources/character_remote_datasource.dart';
 import 'package:app/features/office_location/data/datasources/office_location_remote_datasource.dart';
 import 'package:app/features/weather/data/datasources/weather_remote_datasource.dart';
 import 'package:app/features/weather/domain/models/rayong_weather.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
+import 'dart:math' as math;
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -58,12 +60,16 @@ class _HeroHeader extends StatefulWidget {
 
 class _HeroHeaderState extends State<_HeroHeader> {
   late final Future<RayongWeather> _weatherFuture;
+  late final Future<String> _employeeNameFuture;
 
   @override
   void initState() {
     super.initState();
 
     _weatherFuture = context.read<WeatherRemoteDatasource>().getRayongWeather();
+    _employeeNameFuture = context
+        .read<CharacterRemoteDatasource>()
+        .getEmployeeFullName();
   }
 
   @override
@@ -94,11 +100,11 @@ class _HeroHeaderState extends State<_HeroHeader> {
           child: Stack(
             children: [
               Positioned(
-                right: 12,
-                bottom: -8,
+                right: 20,
+                top: 90,
                 child: _CloudIcon(
-                  size: 156,
-                  opacity: 0.9,
+                  size: 130,
+                  opacity: 0.75,
                   assetPath: weatherIconPath,
                 ),
               ),
@@ -135,13 +141,27 @@ class _HeroHeaderState extends State<_HeroHeader> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Wasuchok',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    FutureBuilder<String>(
+                      future: _employeeNameFuture,
+                      builder: (context, nameSnapshot) {
+                        final employeeName = nameSnapshot.data?.isNotEmpty == true
+                            ? nameSnapshot.data!
+                            : '-';
+
+                        return SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.58,
+                          child: Text(
+                            employeeName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -196,7 +216,7 @@ class _HeaderIconButton extends StatelessWidget {
   }
 }
 
-class _CloudIcon extends StatelessWidget {
+class _CloudIcon extends StatefulWidget {
   final double size;
   final double opacity;
   final String assetPath;
@@ -208,28 +228,61 @@ class _CloudIcon extends StatelessWidget {
   });
 
   @override
+  State<_CloudIcon> createState() => _CloudIconState();
+}
+
+class _CloudIconState extends State<_CloudIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: opacity,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.white.withValues(alpha: 0.22),
-              blurRadius: 34,
-              spreadRadius: 4,
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 26,
-              offset: const Offset(0, 14),
-            ),
-          ],
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final offset = math.sin(_controller.value * 2 * math.pi) * 8;
+        return Transform.translate(
+          offset: Offset(0, offset),
+          child: child,
+        );
+      },
+      child: Opacity(
+        opacity: widget.opacity,
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.22),
+                blurRadius: 34,
+                spreadRadius: 4,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 26,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: Image.asset(widget.assetPath, fit: BoxFit.contain),
         ),
-        child: Image.asset(assetPath, fit: BoxFit.contain),
       ),
     );
   }

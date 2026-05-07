@@ -12,6 +12,7 @@ import 'package:app/features/weather/data/datasources/weather_remote_datasource.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:app/features/attendance/data/datasources/attendance_remote_datasource.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -99,6 +100,10 @@ class _EmployeeAttendanceAppState extends State<EmployeeAttendanceApp> {
           ],
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              fontFamily: GoogleFonts.inter().fontFamily,
+              textTheme: GoogleFonts.interTextTheme(),
+            ),
             routerConfig: appRouter,
           ),
         ),

@@ -7,6 +7,18 @@ class CharacterRemoteDatasource {
 
   CharacterRemoteDatasource({required this.apiClient});
 
+  Future<String> getEmployeeFullName() async {
+    final response = await apiClient.get(ApiConstants.me);
+    final data = response.data;
+    final employeeData = data is Map ? data['data'] : null;
+
+    if (employeeData is! Map) {
+      throw FormatException('Invalid employee response: ${response.data}');
+    }
+
+    return employeeData['full_name']?.toString() ?? '';
+  }
+
   Future<void> ensureEmployeeProfile({
     required String employeeCode,
     required String fullName,
