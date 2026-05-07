@@ -12,6 +12,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     on<TodayAttendanceRequested>(_onTodayAttendanceRequested);
     on<CheckInRequested>(_onCheckIn);
     on<CheckOutRequested>(_onCheckOut);
+    on<AttendanceSummaryRequested>(_onAttendanceSummaryRequested);
   }
 
   Future<void> _onCheckIn(
@@ -57,6 +58,20 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
        emit(AttendanceFailure(message: 'An error occurred during check-out'));
     }
   }
+
+  Future<void> _onAttendanceSummaryRequested(
+  AttendanceSummaryRequested event,
+  Emitter<AttendanceState> emit,
+) async {
+  try {
+    final summary = await attendanceRemoteDatasource.getAttendanceSummary();
+    emit(AttendanceSummaryLoaded(summary: summary));
+  } on DioException catch (e) {
+    emit(AttendanceFailure(message: _dioMessage(e, fallback: 'Failed to load summary')));
+  } catch (_) {
+    emit(AttendanceFailure(message: 'Could not load attendance summary'));
+  }
+}
 
   Future<void> _onTodayAttendanceRequested(
     TodayAttendanceRequested event,

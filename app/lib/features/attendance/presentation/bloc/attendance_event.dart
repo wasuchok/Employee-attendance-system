@@ -27,3 +27,5 @@ class CheckOutRequested extends AttendanceEvent {
 }
 
 class TodayAttendanceRequested extends AttendanceEvent {}
+
+class AttendanceSummaryRequested extends AttendanceEvent {}

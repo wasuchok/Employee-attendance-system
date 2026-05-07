@@ -1,3 +1,4 @@
+import 'package:app/features/attendance/domain/models/attendance_summary.dart';
 import 'package:app/features/attendance/domain/models/today_attendance.dart';
 
 abstract class AttendanceState {}
@@ -24,4 +25,10 @@ class TodayAttendanceLoaded extends AttendanceState {
   final TodayAttendance? attendance;
 
   TodayAttendanceLoaded({required this.attendance});
+}
+
+class AttendanceSummaryLoaded extends AttendanceState {
+  final AttendanceSummary summary;
+
+  AttendanceSummaryLoaded({required this.summary});
 }

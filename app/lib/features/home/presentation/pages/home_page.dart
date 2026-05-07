@@ -762,59 +762,81 @@ class _LocationStrip extends StatelessWidget {
   }
 }
 
-class _QuickStats extends StatelessWidget {
+class _QuickStats extends StatefulWidget {
   const _QuickStats();
+
+  @override
+  State<_QuickStats> createState() => _QuickStatsState();
+}
+
+class _QuickStatsState extends State<_QuickStats> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<AttendanceBloc>().add(AttendanceSummaryRequested());
+  }
 
   @override
   Widget build(BuildContext context) {
     return Transform.translate(
       offset: const Offset(0, -46),
-      child: const Column(
-        children: [
-          Row(
+      child: BlocBuilder<AttendanceBloc, AttendanceState>(
+        buildWhen: (prev, curr) => curr is AttendanceSummaryLoaded,
+        builder: (context, state) {
+          final summary = state is AttendanceSummaryLoaded ? state.summary : null;
+          final present = summary?.present.toString() ?? '-';
+          final late = summary?.late.toString() ?? '-';
+          final absent = summary?.absent.toString() ?? '-';
+          final leave = summary?.leave.toString() ?? '-';
+
+          return Column(
             children: [
-              Expanded(
-                child: _SummaryTile(
-                  label: 'Present',
-                  value: '18',
-                  color: AppColors.success,
-                  icon: Icons.check_circle_outline_rounded,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SummaryTile(
+                      label: 'Present',
+                      value: present,
+                      color: AppColors.success,
+                      icon: Icons.check_circle_outline_rounded,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _SummaryTile(
+                      label: 'Late',
+                      value: late,
+                      color: AppColors.warning,
+                      icon: Icons.access_time_rounded,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: 10),
-              Expanded(
-                child: _SummaryTile(
-                  label: 'Late',
-                  value: '3',
-                  color: AppColors.warning,
-                  icon: Icons.access_time_rounded,
-                ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SummaryTile(
+                      label: 'Absent',
+                      value: absent,
+                      color: AppColors.danger,
+                      icon: Icons.cancel_outlined,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _SummaryTile(
+                      label: 'Leave',
+                      value: leave,
+                      color: AppColors.primary,
+                      icon: Icons.event_available_outlined,
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-          SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _SummaryTile(
-                  label: 'Absent',
-                  value: '1',
-                  color: AppColors.danger,
-                  icon: Icons.cancel_outlined,
-                ),
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: _SummaryTile(
-                  label: 'Leave',
-                  value: '2',
-                  color: AppColors.primary,
-                  icon: Icons.event_available_outlined,
-                ),
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }

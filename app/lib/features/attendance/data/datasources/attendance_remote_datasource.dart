@@ -1,4 +1,5 @@
 import 'package:app/core/constants/api_constants.dart';
+import 'package:app/features/attendance/domain/models/attendance_summary.dart';
 import 'package:app/core/network/api_client.dart';
 import 'package:app/features/attendance/domain/models/today_attendance.dart';
 
@@ -53,5 +54,18 @@ class AttendanceRemoteDatasource {
     }
 
     return TodayAttendance.fromJson(Map<String, dynamic>.from(attendanceData));
+  }
+
+  Future<AttendanceSummary> getAttendanceSummary() async {
+    final response = await apiClient.get(ApiConstants.attendanceSummary);
+
+    final data = response.data;
+    final summaryData = data is Map ? data['data'] : null;
+
+    if(summaryData is! Map) {
+      throw FormatException('Invalid summary response: ${response.data}');
+    }
+
+    return AttendanceSummary.fromJson(Map<String, dynamic>.from(summaryData));
   }
 }
