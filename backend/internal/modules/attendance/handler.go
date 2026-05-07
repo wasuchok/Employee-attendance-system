@@ -287,6 +287,45 @@ func CheckOutAttendance(c fiber.Ctx) error {
  
 }
 
+func GetAttendanceSummary(c fiber.Ctx) error {
+	employeeID, err := getEmployeeIDFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var present, late, absent, leave int
+	err = config.DB.QueryRow(ctx,
+		`SELECT
+			COALESCE(SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN status = 'leave' THEN 1 ELSE 0 END), 0)
+		FROM attendances
+		WHERE employee_id = $1
+			AND date_trunc('month', attendance_date) = date_trunc('month', CURRENT_DATE)`,
+		employeeID,
+	).Scan(&present, &late, &absent, &leave)
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Could not fetch attendance summary",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"data": fiber.Map{
+			"present": present,
+			"late":    late,
+			"absent":  absent,
+			"leave":   leave,
+		},
+	})
+}
+
 
 
 func GetTodayAttendance(c fiber.Ctx) error {

@@ -12,5 +12,6 @@ func RegisterAttendanceRoutes(app *fiber.App) {
 	attendances.Post("/check-in", auth.Protected(), CreateAttendance)
 	attendances.Post("/check-out", auth.Protected(), CheckOutAttendance)
 	attendances.Get("/today", auth.Protected(), GetTodayAttendance)
+	attendances.Get("/summary", auth.Protected(), GetAttendanceSummary)
 	attendances.Get("/history", auth.Protected(), GetAttendanceHistory)
 }
